@@ -19,7 +19,7 @@ function showNextSlide() {
 
 // Start slideshow only if there are slides
 if (slides.length > 1) {
-  setInterval(showNextSlide, 6000);
+  setInterval(showNextSlide, 10000);
 }
 
 // ====== RSVP FORM LOGIC ======
