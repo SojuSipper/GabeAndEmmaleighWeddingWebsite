@@ -3,12 +3,6 @@ const SUPABASE_URL = "https://jhvdlivheqnstpcuyswg.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpodmRsaXZoZXFuc3RwY3V5c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTE1MTAsImV4cCI6MjA5MjI4NzUxMH0.r_cp6yx_m2t4OFkP0xvKIF9yxO7zVtgtZxv1HqjZZZc";
 
 // Create Supabase client
-const client = window.supabase.createClient(
-  SUPABASE_URL,
-  SUPABASE_ANON_KEY
-);
-
-// Create Supabase client
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ====== HERO SLIDESHOW ======
@@ -23,7 +17,10 @@ function showNextSlide() {
   slides[currentSlide].classList.add("active");
 }
 
-setInterval(showNextSlide, 4000);
+// Start slideshow only if there are slides
+if (slides.length > 1) {
+  setInterval(showNextSlide, 6000);
+}
 
 // ====== RSVP FORM LOGIC ======
 const form = document.getElementById("rsvp-form");
@@ -46,11 +43,7 @@ if (form) {
 
     try {
       const { error } = await client.from("rsvps").insert([
-        {
-          name,
-          attendance,
-          notes
-        }
+        { name, attendance, notes }
       ]);
 
       if (error) {
