@@ -8,48 +8,62 @@ const client = window.supabase.createClient(
   SUPABASE_ANON_KEY
 );
 
+// Create Supabase client
+const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ====== HERO SLIDESHOW ======
+const slides = document.querySelectorAll(".slide");
+let currentSlide = 0;
+
+function showNextSlide() {
+  if (!slides.length) return;
+
+  slides[currentSlide].classList.remove("active");
+  currentSlide = (currentSlide + 1) % slides.length;
+  slides[currentSlide].classList.add("active");
+}
+
+setInterval(showNextSlide, 4000);
+
 // ====== RSVP FORM LOGIC ======
 const form = document.getElementById("rsvp-form");
 const status = document.getElementById("status");
 
-form.addEventListener("submit", async (e) => {
-  e.preventDefault();
+if (form) {
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
 
-  // Get form values
-  const name = document.getElementById("name").value.trim();
-  const attendance = document.getElementById("attendance").value;
-  const notes = document.getElementById("notes").value.trim();
+    const name = document.getElementById("name").value.trim();
+    const attendance = document.getElementById("attendance").value;
+    const notes = document.getElementById("notes").value.trim();
 
-  // Basic validation
-  if (!name || !attendance) {
-    status.textContent = "Please fill out all required fields.";
-    return;
-  }
-
-  status.textContent = "Sending RSVP...";
-
-  try {
-    // Insert into Supabase
-    const { error } = await client.from("rsvps").insert([
-      {
-        name: name,
-        attendance: attendance,
-        notes: notes
-      }
-    ]);
-
-    if (error) {
-      console.error("Supabase error:", error);
-      status.textContent = "Something went wrong. Please try again.";
+    if (!name || !attendance) {
+      status.textContent = "Please fill out all required fields.";
       return;
     }
 
-    // Success
-    status.textContent = "RSVP submitted successfully! 🎉";
-    form.reset();
+    status.textContent = "Sending RSVP...";
 
-  } catch (err) {
-    console.error("Unexpected error:", err);
-    status.textContent = "Unexpected error occurred.";
-  }
-});
+    try {
+      const { error } = await client.from("rsvps").insert([
+        {
+          name,
+          attendance,
+          notes
+        }
+      ]);
+
+      if (error) {
+        console.error("Supabase error:", error);
+        status.textContent = "Something went wrong. Please try again.";
+        return;
+      }
+
+      status.textContent = "RSVP submitted successfully!";
+      form.reset();
+    } catch (err) {
+      console.error("Unexpected error:", err);
+      status.textContent = "Unexpected error occurred.";
+    }
+  });
+}

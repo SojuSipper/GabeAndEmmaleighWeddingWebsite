@@ -3,41 +3,145 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Our Wedding</title>
+  <title>Gabriel & Emmaleigh | Wedding</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <header>
-    <h1>Gabriel & Emmaleigh</h1>
-    <p>Welcome to our wedding website</p>
+  <nav class="site-nav">
+    <div class="nav-inner">
+      <a href="#home" class="brand">G & E</a>
+      <div class="nav-links">
+        <a href="#journey">Our Journey</a>
+        <a href="#gallery">Gallery</a>
+        <a href="#details">Details</a>
+        <a href="#registry">Registry</a>
+        <a href="#honeyfund">Honeyfund</a>
+        <a href="#rsvp">RSVP</a>
+      </div>
+    </div>
+  </nav>
+
+  <header class="hero" id="home">
+    <div class="hero-overlay"></div>
+
+    <div class="hero-slideshow">
+      <img src="images/photo1.jpg" class="slide active" alt="Gabriel and Emmaleigh photo 1">
+      <img src="images/photo2.jpg" class="slide" alt="Gabriel and Emmaleigh photo 2">
+      <img src="images/photo3.jpg" class="slide" alt="Gabriel and Emmaleigh photo 3">
+      <img src="images/photo4.jpg" class="slide" alt="Gabriel and Emmaleigh photo 4">
+    </div>
+
+    <div class="hero-content">
+      <p class="eyebrow">We’re getting married</p>
+      <h1>Gabriel & Emmaleigh</h1>
+      <p class="hero-date">May 8, 2027</p>
+      <p class="hero-subtitle">We’re so excited to celebrate with the people we love most.</p>
+      <a href="#rsvp" class="primary-btn">RSVP</a>
+    </div>
   </header>
 
-  <main>
-    <section>
-      <h2>Save the Date</h2>
-      <p>05/08/2027</p>
+  <main class="container">
+    <section class="card intro-card">
+      <h2>Welcome</h2>
+      <p>
+        Thank you for visiting our wedding website. We made this space to share our story,
+        our wedding details, and ways to celebrate with us.
+      </p>
     </section>
 
-    <section>
+    <section id="journey" class="card">
+      <h2>Our Journey</h2>
+      <div class="timeline">
+        <div class="timeline-item">
+          <h3>How We Met</h3>
+          <p>Add your story here.</p>
+        </div>
+        <div class="timeline-item">
+          <h3>Our Favorite Memories</h3>
+          <p>Add a few sweet moments here.</p>
+        </div>
+        <div class="timeline-item">
+          <h3>The Proposal</h3>
+          <p>Tell the engagement story here.</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="gallery" class="card">
+      <h2>Photo Gallery</h2>
+      <div class="gallery-grid">
+        <img src="images/photo1.jpg" alt="Gallery photo 1">
+        <img src="images/photo2.jpg" alt="Gallery photo 2">
+        <img src="images/photo3.jpg" alt="Gallery photo 3">
+        <img src="images/photo4.jpg" alt="Gallery photo 4">
+      </div>
+    </section>
+
+    <section id="details" class="card">
+      <h2>Wedding Details</h2>
+      <div class="details-grid">
+        <div>
+          <h3>Date</h3>
+          <p>May 8, 2027</p>
+        </div>
+        <div>
+          <h3>Ceremony</h3>
+          <p>Add ceremony time and location</p>
+        </div>
+        <div>
+          <h3>Reception</h3>
+          <p>Add reception info</p>
+        </div>
+        <div>
+          <h3>Dress Code</h3>
+          <p>Add dress code here</p>
+        </div>
+      </div>
+    </section>
+
+    <section id="registry" class="card">
+      <h2>Registry</h2>
+      <p>visit our registry below.</p>
+      <div class="button-row">
+        <a class="secondary-btn" href="https://example.com" target="_blank" rel="noopener">View Registry</a>
+      </div>
+    </section>
+
+    <section id="honeyfund" class="card">
+      <h2>Honeyfund</h2>
+      <p>
+        If you’d prefer, you can also contribute to our honeymoon and future adventures together.
+      </p>
+      <div class="button-row">
+        <a class="secondary-btn" href="https://example.com" target="_blank" rel="noopener">View Honeyfund</a>
+      </div>
+    </section>
+
+    <section id="rsvp" class="card">
       <h2>RSVP</h2>
       <form id="rsvp-form">
         <input type="text" id="name" placeholder="Your name" required />
+
         <select id="attendance" required>
           <option value="">Will you attend?</option>
           <option value="yes">Yes</option>
           <option value="no">No</option>
         </select>
+
         <textarea id="notes" placeholder="Notes"></textarea>
+
         <button type="submit">Send RSVP</button>
       </form>
       <p id="status"></p>
     </section>
-
-    <section>
-      <h2>Registry</h2>
-      <p><a href="https://example.com" target="_blank" rel="noopener">View our registry</a></p>
-    </section>
   </main>
+
+  <footer class="site-footer">
+    <p>Made with love for our favorite people.</p>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="script.js"></script>
