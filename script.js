@@ -1,6 +1,6 @@
 // ====== CONFIG ======
 const SUPABASE_URL = "https://jhvdlivheqnstpcuyswg.supabase.co";
-const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpodmRsaXZoZXFuc3RwY3V5c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTE1MTAsImV4cCI6MjA5MjI4NzUxMH0.r_cp6yx_m2t4OFkP0xvKIF9yxO7zVtgtZxv1HqjZZZc";
 
 // Create Supabase client
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -11,7 +11,6 @@ let currentSlide = 0;
 
 function showNextSlide() {
   if (!slides.length) return;
-
   slides[currentSlide].classList.remove("active");
   currentSlide = (currentSlide + 1) % slides.length;
   slides[currentSlide].classList.add("active");
@@ -21,54 +20,74 @@ if (slides.length > 1) {
   setInterval(showNextSlide, 10000);
 }
 
-// ====== LIVE COUNTDOWN ======
-const countdownDaysEl = document.getElementById("countdown-days");
-
-function updateWeddingCountdown() {
-  if (!countdownDaysEl) return;
-
-  const weddingDate = new Date(2027, 4, 8); // May 8, 2027
-  const now = new Date();
-
-  const diffMs = weddingDate.getTime() - now.getTime();
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const daysLeft = Math.ceil(diffMs / msPerDay);
-
-  if (daysLeft > 0) {
-    countdownDaysEl.textContent = daysLeft;
-  } else if (daysLeft === 0) {
-    countdownDaysEl.textContent = "0";
-  } else {
-    countdownDaysEl.textContent = "Married!";
-  }
-}
-
-updateWeddingCountdown();
-setInterval(updateWeddingCountdown, 60 * 1000);
-
 // ====== RSVP FORM LOGIC ======
 const form = document.getElementById("rsvp-form");
 const status = document.getElementById("status");
+
+const confirmModal = document.getElementById("rsvp-confirm-modal");
+const confirmText = document.getElementById("confirm-text");
+const confirmCancel = document.getElementById("confirm-cancel");
+const confirmSubmit = document.getElementById("confirm-submit");
+
+let pendingRsvpData = null;
+
+function openConfirmModal(fullName) {
+  confirmText.textContent =
+    `Please confirm this RSVP is only for ${fullName} and does not include any +1's.`;
+  confirmModal.classList.remove("hidden");
+  confirmModal.setAttribute("aria-hidden", "false");
+}
+
+function closeConfirmModal() {
+  confirmModal.classList.add("hidden");
+  confirmModal.setAttribute("aria-hidden", "true");
+}
+
+if (confirmCancel) {
+  confirmCancel.addEventListener("click", closeConfirmModal);
+}
 
 if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const name = document.getElementById("name").value.trim();
+    const firstName = document.getElementById("first-name").value.trim();
+    const lastName = document.getElementById("last-name").value.trim();
     const attendance = document.getElementById("attendance").value;
-    const notes = document.getElementById("notes").value.trim();
+    const sodaPreference = document.getElementById("soda-preference").value.trim();
+    const songRequest = document.getElementById("song-request").value.trim();
+    const seatingRequests = document.getElementById("seating-requests").value.trim();
+    const messageToCouple = document.getElementById("message-to-couple").value.trim();
 
-    if (!name || !attendance) {
+    if (!firstName || !lastName || !attendance) {
       status.textContent = "Please fill out all required fields.";
       return;
     }
 
+    pendingRsvpData = {
+      first_name: firstName,
+      last_name: lastName,
+      attendance: attendance,
+      soda_preference: sodaPreference,
+      song_request: songRequest,
+      seating_requests: seatingRequests,
+      message_to_couple: messageToCouple
+    };
+
+    openConfirmModal(`${firstName} ${lastName}`);
+  });
+}
+
+if (confirmSubmit) {
+  confirmSubmit.addEventListener("click", async () => {
+    if (!pendingRsvpData) return;
+
     status.textContent = "Sending RSVP...";
+    confirmSubmit.disabled = true;
+    confirmCancel.disabled = true;
 
     try {
-      const { error } = await client.from("rsvps").insert([
-        { name, attendance, notes }
-      ]);
+      const { error } = await client.from("rsvps").insert([pendingRsvpData]);
 
       if (error) {
         console.error("Supabase error:", error);
@@ -78,9 +97,14 @@ if (form) {
 
       status.textContent = "RSVP submitted successfully!";
       form.reset();
+      pendingRsvpData = null;
+      closeConfirmModal();
     } catch (err) {
       console.error("Unexpected error:", err);
       status.textContent = "Unexpected error occurred.";
+    } finally {
+      confirmSubmit.disabled = false;
+      confirmCancel.disabled = false;
     }
   });
 }
@@ -137,3 +161,28 @@ if (siteNav) {
     { passive: true }
   );
 }
+
+// ====== LIVE COUNTDOWN ======
+const countdownDaysEl = document.getElementById("countdown-days");
+
+function updateWeddingCountdown() {
+  if (!countdownDaysEl) return;
+
+  const weddingDate = new Date(2027, 4, 8); // May 8, 2027
+  const now = new Date();
+
+  const diffMs = weddingDate.getTime() - now.getTime();
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const daysLeft = Math.ceil(diffMs / msPerDay);
+
+  if (daysLeft > 0) {
+    countdownDaysEl.textContent = daysLeft;
+  } else if (daysLeft === 0) {
+    countdownDaysEl.textContent = "0";
+  } else {
+    countdownDaysEl.textContent = "Married!";
+  }
+}
+
+updateWeddingCountdown();
+setInterval(updateWeddingCountdown, 60 * 1000);
