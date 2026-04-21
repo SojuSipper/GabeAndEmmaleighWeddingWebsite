@@ -493,6 +493,7 @@ textarea:focus {
   height: 85px;
   width: auto;
   object-fit: contain;
+  padding-bottom: 15px;
 
   filter:
     drop-shadow(0 6px 18px rgba(0, 0, 0, 0.12))
