@@ -67,12 +67,6 @@ if (form) {
     const firstName = document.getElementById("first-name")?.value.trim() || "";
     const lastName = document.getElementById("last-name")?.value.trim() || "";
     const attendance = document.getElementById("attendance")?.value || "";
-    const sodaPreference =
-      document.getElementById("soda-preference")?.value.trim() || "";
-    const songRequest =
-      document.getElementById("song-request")?.value.trim() || "";
-    const seatingRequests =
-      document.getElementById("seating-requests")?.value.trim() || "";
     const messageToCouple =
       document.getElementById("message-to-couple")?.value.trim() || "";
 
