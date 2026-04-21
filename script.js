@@ -31,36 +31,53 @@ const confirmSubmit = document.getElementById("confirm-submit");
 
 let pendingRsvpData = null;
 
+function setStatus(message, isError = false) {
+  if (!status) return;
+  status.textContent = message;
+  status.style.color = isError ? "#a94442" : "";
+}
+
 function openConfirmModal(fullName) {
+  if (!confirmModal || !confirmText) return;
+
   confirmText.textContent =
     `Please confirm this RSVP is only for ${fullName} and does not include any +1's.`;
+
   confirmModal.classList.remove("hidden");
   confirmModal.setAttribute("aria-hidden", "false");
 }
 
 function closeConfirmModal() {
+  if (!confirmModal) return;
+
   confirmModal.classList.add("hidden");
   confirmModal.setAttribute("aria-hidden", "true");
 }
 
 if (confirmCancel) {
-  confirmCancel.addEventListener("click", closeConfirmModal);
+  confirmCancel.addEventListener("click", () => {
+    closeConfirmModal();
+  });
 }
 
 if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    const firstName = document.getElementById("first-name").value.trim();
-    const lastName = document.getElementById("last-name").value.trim();
-    const attendance = document.getElementById("attendance").value;
-    const sodaPreference = document.getElementById("soda-preference").value.trim();
-    const songRequest = document.getElementById("song-request").value.trim();
-    const seatingRequests = document.getElementById("seating-requests").value.trim();
-    const messageToCouple = document.getElementById("message-to-couple").value.trim();
+    const firstName = document.getElementById("first-name")?.value.trim() || "";
+    const lastName = document.getElementById("last-name")?.value.trim() || "";
+    const attendance = document.getElementById("attendance")?.value || "";
+    const sodaPreference =
+      document.getElementById("soda-preference")?.value.trim() || "";
+    const songRequest =
+      document.getElementById("song-request")?.value.trim() || "";
+    const seatingRequests =
+      document.getElementById("seating-requests")?.value.trim() || "";
+    const messageToCouple =
+      document.getElementById("message-to-couple")?.value.trim() || "";
 
     if (!firstName || !lastName || !attendance) {
-      status.textContent = "Please fill out all required fields.";
+      setStatus("Please fill out First Name, Last Name, and Attending.", true);
       return;
     }
 
@@ -74,37 +91,42 @@ if (form) {
       message_to_couple: messageToCouple
     };
 
+    setStatus("");
     openConfirmModal(`${firstName} ${lastName}`);
   });
 }
 
 if (confirmSubmit) {
   confirmSubmit.addEventListener("click", async () => {
-    if (!pendingRsvpData) return;
+    if (!pendingRsvpData) {
+      setStatus("No RSVP data found. Please fill out the form again.", true);
+      closeConfirmModal();
+      return;
+    }
 
-    status.textContent = "Sending RSVP...";
+    setStatus("Sending RSVP...");
     confirmSubmit.disabled = true;
-    confirmCancel.disabled = true;
+    if (confirmCancel) confirmCancel.disabled = true;
 
     try {
       const { error } = await client.from("rsvps").insert([pendingRsvpData]);
 
       if (error) {
         console.error("Supabase error:", error);
-        status.textContent = "Something went wrong. Please try again.";
+        setStatus(`Something went wrong: ${error.message}`, true);
         return;
       }
 
-      status.textContent = "RSVP submitted successfully!";
+      setStatus("RSVP submitted successfully!");
       form.reset();
       pendingRsvpData = null;
       closeConfirmModal();
     } catch (err) {
       console.error("Unexpected error:", err);
-      status.textContent = "Unexpected error occurred.";
+      setStatus("Unexpected error occurred.", true);
     } finally {
       confirmSubmit.disabled = false;
-      confirmCancel.disabled = false;
+      if (confirmCancel) confirmCancel.disabled = false;
     }
   });
 }
