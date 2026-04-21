@@ -67,9 +67,7 @@ if (form) {
     const firstName = document.getElementById("first-name")?.value.trim() || "";
     const lastName = document.getElementById("last-name")?.value.trim() || "";
     const attendance = document.getElementById("attendance")?.value || "";
-    const messageToCouple =
-      document.getElementById("message-to-couple")?.value.trim() || "";
-
+    const messageToCouple = document.getElementById("message-to-couple")?.value.trim() || "";
     if (!firstName || !lastName || !attendance) {
       setStatus("Please fill out First Name, Last Name, and Attending.", true);
       return;
@@ -79,9 +77,6 @@ if (form) {
       first_name: firstName,
       last_name: lastName,
       attendance: attendance,
-      soda_preference: sodaPreference,
-      song_request: songRequest,
-      seating_requests: seatingRequests,
       message_to_couple: messageToCouple
     };
 
