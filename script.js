@@ -60,3 +60,56 @@ if (form) {
     }
   });
 }
+
+// ====== NAVBAR HIDE / SHOW ON SCROLL ======
+const siteNav = document.querySelector(".site-nav");
+
+if (siteNav) {
+  let lastScrollY = window.scrollY;
+  let scrollDownDistance = 0;
+  let scrollUpDistance = 0;
+
+  const HIDE_THRESHOLD = 110; // must scroll down a bit before hiding
+  const SHOW_THRESHOLD = 35;  // shows sooner when scrolling back up
+
+  window.addEventListener("scroll", () => {
+    const currentScrollY = window.scrollY;
+    const delta = currentScrollY - lastScrollY;
+
+    // add slightly stronger nav style after leaving top
+    if (currentScrollY > 20) {
+      siteNav.classList.add("nav-scrolled");
+    } else {
+      siteNav.classList.remove("nav-scrolled");
+    }
+
+    // do nothing near the very top
+    if (currentScrollY <= 10) {
+      siteNav.classList.remove("nav-hidden");
+      scrollDownDistance = 0;
+      scrollUpDistance = 0;
+      lastScrollY = currentScrollY;
+      return;
+    }
+
+    if (delta > 0) {
+      // scrolling down
+      scrollDownDistance += delta;
+      scrollUpDistance = 0;
+
+      if (scrollDownDistance > HIDE_THRESHOLD) {
+        siteNav.classList.add("nav-hidden");
+      }
+    } else if (delta < 0) {
+      // scrolling up
+      scrollUpDistance += Math.abs(delta);
+      scrollDownDistance = 0;
+
+      if (scrollUpDistance > SHOW_THRESHOLD) {
+        siteNav.classList.remove("nav-hidden");
+      }
+    }
+
+    lastScrollY = currentScrollY;
+  }, { passive: true });
+}

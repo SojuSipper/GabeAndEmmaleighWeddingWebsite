@@ -36,9 +36,7 @@ img {
 }
 
 
-/* =========================
-   NAVIGATION
-========================= */
+
 /* =========================
    NAVIGATION
 ========================= */
@@ -47,18 +45,25 @@ img {
   position: sticky;
   top: 0;
   z-index: 100;
+  transform: translateY(0);
+  transition:
+    transform 0.35s ease,
+    background 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
   background:
     linear-gradient(
       to bottom,
-      rgba(252, 249, 245, 0.96),
-      rgba(248, 242, 236, 0.92)
+      rgba(252, 249, 245, 0.72),
+      rgba(248, 242, 236, 0.58)
     );
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(200, 164, 77, 0.22);
-  border-bottom: 1px solid rgba(200, 164, 77, 0.28);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid rgba(200, 164, 77, 0.14);
+  border-bottom: 1px solid rgba(200, 164, 77, 0.20);
   box-shadow:
-    0 8px 24px rgba(58, 38, 30, 0.05),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    0 8px 24px rgba(58, 38, 30, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
   overflow: hidden;
 }
 
@@ -67,7 +72,7 @@ img {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at center, rgba(200, 164, 77, 0.10), transparent 60%);
+    radial-gradient(circle at center, rgba(200, 164, 77, 0.07), transparent 60%);
   pointer-events: none;
   z-index: 0;
 }
@@ -78,17 +83,33 @@ img {
   left: 0;
   right: 0;
   bottom: 0;
-  height: 3px;
+  height: 2px;
   background: linear-gradient(
     90deg,
     transparent 0%,
-    rgba(200, 164, 77, 0.18) 15%,
-    rgba(200, 164, 77, 0.5) 50%,
-    rgba(200, 164, 77, 0.18) 85%,
+    rgba(200, 164, 77, 0.12) 15%,
+    rgba(200, 164, 77, 0.38) 50%,
+    rgba(200, 164, 77, 0.12) 85%,
     transparent 100%
   );
   pointer-events: none;
   z-index: 0;
+}
+
+.site-nav.nav-hidden {
+  transform: translateY(-100%);
+}
+
+.site-nav.nav-scrolled {
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(252, 249, 245, 0.84),
+      rgba(248, 242, 236, 0.72)
+    );
+  box-shadow:
+    0 10px 28px rgba(58, 38, 30, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
 }
 
 .nav-inner {
@@ -96,19 +117,22 @@ img {
   z-index: 1;
   max-width: var(--max);
   margin: 0 auto;
-  padding: 1rem 1.25rem;
+  padding: 0.9rem 1rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
+  min-width: 0;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
   text-decoration: none;
   color: var(--text);
   font-weight: 600;
+  white-space: nowrap;
 }
 
 .brand-logo {
@@ -122,13 +146,26 @@ img {
 
 .nav-links {
   display: flex;
-  flex-wrap: wrap;
-  gap: 1.15rem;
+  flex-wrap: nowrap;
+  gap: 1rem;
   align-items: center;
+  overflow-x: auto;
+  overflow-y: hidden;
+  white-space: nowrap;
+  min-width: 0;
+  flex: 1 1 auto;
+  justify-content: flex-end;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.nav-links::-webkit-scrollbar {
+  display: none;
 }
 
 .nav-links a {
   position: relative;
+  flex: 0 0 auto;
   text-decoration: none;
   color: var(--text);
   font-weight: 600;
@@ -157,36 +194,62 @@ img {
   width: 100%;
 }
 
-/* subtle decorative separators */
 .nav-links a:not(:last-child)::before {
   content: "•";
   position: absolute;
-  right: -0.72rem;
+  right: -0.65rem;
   top: 50%;
   transform: translateY(-52%);
   font-size: 0.7rem;
-  color: rgba(200, 164, 77, 0.55);
+  color: rgba(200, 164, 77, 0.5);
   pointer-events: none;
 }
 
+/* =========================
+   MOBILE NAV FIX
+========================= */
+
 @media (max-width: 768px) {
   .nav-inner {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.8rem 0.85rem;
   }
 
   .brand-logo {
-    height: 44px;
+    height: 40px;
   }
 
   .nav-links {
     gap: 0.85rem;
+    justify-content: flex-start;
+    padding-bottom: 0.1rem;
+  }
+
+  .nav-links a {
+    font-size: 0.95rem;
   }
 
   .nav-links a:not(:last-child)::before {
-    display: none;
+    right: -0.55rem;
   }
 }
+
+@media (max-width: 560px) {
+  .brand-logo {
+    height: 34px;
+  }
+
+  .nav-links {
+    gap: 0.7rem;
+  }
+
+  .nav-links a {
+    font-size: 0.9rem;
+  }
+}
+
 /* =========================
    HERO
 ========================= */
