@@ -69,7 +69,7 @@ if (siteNav) {
   let scrollDownDistance = 0;
   let scrollUpDistance = 0;
 
-  const HIDE_THRESHOLD = 110; // must scroll down a bit before hiding
+  const HIDE_THRESHOLD = 90; // must scroll down a bit before hiding
   const SHOW_THRESHOLD = 35;  // shows sooner when scrolling back up
 
   window.addEventListener("scroll", () => {
@@ -113,3 +113,28 @@ if (siteNav) {
     lastScrollY = currentScrollY;
   }, { passive: true });
 }
+
+// LIVE WEDDING COUNTDOWN
+const countdownDaysEl = document.getElementById("countdown-days");
+
+function updateWeddingCountdown() {
+  if (!countdownDaysEl) return;
+
+  const weddingDate = new Date(2027, 4, 8); // May 8, 2027
+  const now = new Date();
+
+  const diffMs = weddingDate.getTime() - now.getTime();
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const daysLeft = Math.ceil(diffMs / msPerDay);
+
+  if (daysLeft > 0) {
+    countdownDaysEl.textContent = daysLeft;
+  } else if (daysLeft === 0) {
+    countdownDaysEl.textContent = "0";
+  } else {
+    countdownDaysEl.textContent = "Married!";
+  }
+}
+
+updateWeddingCountdown();
+setInterval(updateWeddingCountdown, 60 * 1000);
