@@ -345,103 +345,72 @@ p {
   letter-spacing: 0.06em;
 }
 
-/* =========================
-   HERO RSVP BUTTON
-   ========================= */
-.hero-rsvp {
-  display: inline-block;
-  position: relative;
-  padding: 0.95rem 1.7rem;
-  margin-top: 0.8rem;
-  font-size: 1.02rem;
-  font-weight: 600;
-  letter-spacing: 0.05em;
-  text-decoration: none;
-  color: white;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.34);
-  background: linear-gradient(
-    135deg,
-    var(--accent),
-    var(--hydrangea-dark)
-  );
-  box-shadow:
-    0 10px 26px rgba(201, 140, 167, 0.24),
-    0 12px 30px rgba(127, 153, 184, 0.14);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.25s ease,
-    filter 0.25s ease;
-  overflow: hidden;
-}
-
-.hero-rsvp:hover {
-  transform: translateY(-2px);
-  box-shadow:
-    0 14px 34px rgba(201, 140, 167, 0.30),
-    0 16px 36px rgba(127, 153, 184, 0.18);
-}
-
-.hero-rsvp:active {
-  transform: translateY(0);
-  box-shadow:
-    0 6px 16px rgba(201, 140, 167, 0.18),
-    0 8px 18px rgba(127, 153, 184, 0.12);
-}
-
-.hero-rsvp::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  background: radial-gradient(circle, rgba(255, 255, 255, 0.32), transparent 70%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.hero-rsvp:hover::after {
-  opacity: 0.22;
-}
 
 /* =========================
    BUTTONS
    ========================= */
+
 .primary-btn,
 .secondary-btn,
 button {
   display: inline-block;
-  padding: 0.85rem 1.3rem;
-  border: 1px solid rgba(122, 104, 96, 0.08);
-  border-radius: 14px;
-  background: linear-gradient(135deg, var(--accent), var(--hydrangea-dark));
-  color: white;
+  padding: 0.75rem 1.3rem;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
   text-decoration: none;
   cursor: pointer;
-  font-size: 1rem;
-  font-weight: 600;
-  box-shadow:
-    0 10px 24px rgba(201, 140, 167, 0.16),
-    0 8px 20px rgba(127, 153, 184, 0.10);
-  transition:
-    transform 0.2s ease,
-    box-shadow 0.2s ease,
-    opacity 0.2s ease;
+  transition: all 0.25s ease;
 }
 
-.primary-btn:hover,
-.secondary-btn:hover,
-button:hover {
+/* ===== PRIMARY (RSVP) ===== */
+.primary-btn {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+
+  box-shadow:
+    0 6px 18px rgba(200, 164, 77, 0.25),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.primary-btn:hover {
   transform: translateY(-1px);
   box-shadow:
-    0 14px 30px rgba(201, 140, 167, 0.20),
-    0 12px 26px rgba(127, 153, 184, 0.12);
+    0 10px 24px rgba(200, 164, 77, 0.32),
+    0 4px 10px rgba(0, 0, 0, 0.10);
 }
 
-.primary-btn:active,
-.secondary-btn:active,
-button:active {
-  transform: translateY(0);
-  opacity: 0.96;
+/* ===== SECONDARY (Registry / Honeyfund) ===== */
+.secondary-btn {
+  background: rgba(200, 164, 77, 0.10);
+  color: var(--accent-dark);
+  border: 1px solid rgba(200, 164, 77, 0.35);
+
+  backdrop-filter: blur(4px);
+}
+
+.secondary-btn:hover {
+  background: var(--accent);
+  color: #ffffff;
+  border-color: var(--accent);
+
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(200, 164, 77, 0.25);
+}
+
+/* ===== FORM BUTTON (RSVP submit) ===== */
+button[type="submit"] {
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
+  color: #ffffff;
+  border: none;
+
+  box-shadow: 0 6px 16px rgba(200, 164, 77, 0.22);
+}
+
+button[type="submit"]:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(200, 164, 77, 0.28);
 }
 
 /* =========================

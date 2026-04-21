@@ -1,6 +1,6 @@
 // ====== CONFIG ======
 const SUPABASE_URL = "https://jhvdlivheqnstpcuyswg.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpodmRsaXZoZXFuc3RwY3V5c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTE1MTAsImV4cCI6MjA5MjI4NzUxMH0.r_cp6yx_m2t4OFkP0xvKIF9yxO7zVtgtZxv1HqjZZZc";
+const SUPABASE_ANON_KEY = "YOUR_SUPABASE_ANON_KEY_HERE";
 
 // Create Supabase client
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -17,10 +17,34 @@ function showNextSlide() {
   slides[currentSlide].classList.add("active");
 }
 
-// Start slideshow only if there are slides
 if (slides.length > 1) {
   setInterval(showNextSlide, 10000);
 }
+
+// ====== LIVE COUNTDOWN ======
+const countdownDaysEl = document.getElementById("countdown-days");
+
+function updateWeddingCountdown() {
+  if (!countdownDaysEl) return;
+
+  const weddingDate = new Date(2027, 4, 8); // May 8, 2027
+  const now = new Date();
+
+  const diffMs = weddingDate.getTime() - now.getTime();
+  const msPerDay = 1000 * 60 * 60 * 24;
+  const daysLeft = Math.ceil(diffMs / msPerDay);
+
+  if (daysLeft > 0) {
+    countdownDaysEl.textContent = daysLeft;
+  } else if (daysLeft === 0) {
+    countdownDaysEl.textContent = "0";
+  } else {
+    countdownDaysEl.textContent = "Married!";
+  }
+}
+
+updateWeddingCountdown();
+setInterval(updateWeddingCountdown, 60 * 1000);
 
 // ====== RSVP FORM LOGIC ======
 const form = document.getElementById("rsvp-form");
@@ -69,72 +93,47 @@ if (siteNav) {
   let scrollDownDistance = 0;
   let scrollUpDistance = 0;
 
-  const HIDE_THRESHOLD = 90; // must scroll down a bit before hiding
-  const SHOW_THRESHOLD = 35;  // shows sooner when scrolling back up
+  const HIDE_THRESHOLD = 110;
+  const SHOW_THRESHOLD = 35;
 
-  window.addEventListener("scroll", () => {
-    const currentScrollY = window.scrollY;
-    const delta = currentScrollY - lastScrollY;
+  window.addEventListener(
+    "scroll",
+    () => {
+      const currentScrollY = window.scrollY;
+      const delta = currentScrollY - lastScrollY;
 
-    // add slightly stronger nav style after leaving top
-    if (currentScrollY > 20) {
-      siteNav.classList.add("nav-scrolled");
-    } else {
-      siteNav.classList.remove("nav-scrolled");
-    }
-
-    // do nothing near the very top
-    if (currentScrollY <= 10) {
-      siteNav.classList.remove("nav-hidden");
-      scrollDownDistance = 0;
-      scrollUpDistance = 0;
-      lastScrollY = currentScrollY;
-      return;
-    }
-
-    if (delta > 0) {
-      // scrolling down
-      scrollDownDistance += delta;
-      scrollUpDistance = 0;
-
-      if (scrollDownDistance > HIDE_THRESHOLD) {
-        siteNav.classList.add("nav-hidden");
+      if (currentScrollY > 20) {
+        siteNav.classList.add("nav-scrolled");
+      } else {
+        siteNav.classList.remove("nav-scrolled");
       }
-    } else if (delta < 0) {
-      // scrolling up
-      scrollUpDistance += Math.abs(delta);
-      scrollDownDistance = 0;
 
-      if (scrollUpDistance > SHOW_THRESHOLD) {
+      if (currentScrollY <= 10) {
         siteNav.classList.remove("nav-hidden");
+        scrollDownDistance = 0;
+        scrollUpDistance = 0;
+        lastScrollY = currentScrollY;
+        return;
       }
-    }
 
-    lastScrollY = currentScrollY;
-  }, { passive: true });
+      if (delta > 0) {
+        scrollDownDistance += delta;
+        scrollUpDistance = 0;
+
+        if (scrollDownDistance > HIDE_THRESHOLD) {
+          siteNav.classList.add("nav-hidden");
+        }
+      } else if (delta < 0) {
+        scrollUpDistance += Math.abs(delta);
+        scrollDownDistance = 0;
+
+        if (scrollUpDistance > SHOW_THRESHOLD) {
+          siteNav.classList.remove("nav-hidden");
+        }
+      }
+
+      lastScrollY = currentScrollY;
+    },
+    { passive: true }
+  );
 }
-
-// LIVE WEDDING COUNTDOWN
-const countdownDaysEl = document.getElementById("countdown-days");
-
-function updateWeddingCountdown() {
-  if (!countdownDaysEl) return;
-
-  const weddingDate = new Date(2027, 4, 8); // May 8, 2027
-  const now = new Date();
-
-  const diffMs = weddingDate.getTime() - now.getTime();
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const daysLeft = Math.ceil(diffMs / msPerDay);
-
-  if (daysLeft > 0) {
-    countdownDaysEl.textContent = daysLeft;
-  } else if (daysLeft === 0) {
-    countdownDaysEl.textContent = "0";
-  } else {
-    countdownDaysEl.textContent = "Married!";
-  }
-}
-
-updateWeddingCountdown();
-setInterval(updateWeddingCountdown, 60 * 1000);
