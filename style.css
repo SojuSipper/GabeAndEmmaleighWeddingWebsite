@@ -3,9 +3,13 @@
   --card: rgba(255, 255, 255, 0.92);
   --text: #2f2a28;
   --muted: #6f625b;
-  --accent: #b18476;
-  --accent-dark: #8e665a;
-  --line: rgba(120, 94, 84, 0.16);
+
+  --accent: #c8a44d;
+  --accent-dark: #9c7a2f;
+  --accent-soft: #efe2b8;
+  --accent-glow: rgba(200, 164, 77, 0.18);
+
+  --line: rgba(156, 122, 47, 0.20);
   --shadow: 0 18px 40px rgba(58, 38, 30, 0.10);
   --radius: 24px;
   --max: 1100px;
@@ -31,6 +35,10 @@ img {
   display: block;
 }
 
+/* =========================
+   NAVIGATION
+========================= */
+
 .site-nav {
   position: sticky;
   top: 0;
@@ -38,6 +46,7 @@ img {
   background: rgba(250, 247, 242, 0.92);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--line);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.04);
 }
 
 .nav-inner {
@@ -50,11 +59,19 @@ img {
   gap: 1rem;
 }
 
-.brand,
-.nav-links a {
+.brand {
+  display: inline-flex;
+  align-items: center;
   text-decoration: none;
   color: var(--text);
   font-weight: 600;
+}
+
+.brand-logo {
+  height: 54px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.10));
 }
 
 .nav-links {
@@ -62,6 +79,38 @@ img {
   flex-wrap: wrap;
   gap: 1rem;
 }
+
+.nav-links a {
+  position: relative;
+  text-decoration: none;
+  color: var(--text);
+  font-weight: 600;
+  transition: color 0.25s ease;
+}
+
+.nav-links a:hover {
+  color: var(--accent-dark);
+}
+
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.3rem;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-dark));
+  border-radius: 999px;
+  transition: width 0.25s ease;
+}
+
+.nav-links a:hover::after {
+  width: 100%;
+}
+
+/* =========================
+   HERO
+========================= */
 
 .hero {
   position: relative;
@@ -94,7 +143,8 @@ img {
 .hero-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.18), rgba(0,0,0,0.42));
+  background:
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.42));
   z-index: 2;
 }
 
@@ -105,6 +155,16 @@ img {
   color: white;
   padding: 2rem;
   max-width: 750px;
+  text-shadow: 0 3px 18px rgba(0, 0, 0, 0.28);
+}
+
+.hero-content::before {
+  content: "";
+  position: absolute;
+  inset: 10% 12%;
+  background: radial-gradient(circle, rgba(200, 164, 77, 0.16), transparent 70%);
+  z-index: -1;
+  filter: blur(10px);
 }
 
 .hero h1 {
@@ -118,6 +178,10 @@ img {
   margin: 0.75rem 0;
 }
 
+/* =========================
+   BUTTONS
+========================= */
+
 .primary-btn,
 .secondary-btn,
 button {
@@ -125,12 +189,32 @@ button {
   padding: 0.85rem 1.3rem;
   border: none;
   border-radius: 999px;
-  background: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: white;
   text-decoration: none;
   cursor: pointer;
   font-size: 1rem;
+  box-shadow: 0 10px 24px var(--accent-glow);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
+
+.primary-btn:hover,
+.secondary-btn:hover,
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px var(--accent-glow);
+}
+
+.primary-btn:active,
+.secondary-btn:active,
+button:active {
+  transform: translateY(0);
+  opacity: 0.95;
+}
+
+/* =========================
+   MAIN LAYOUT
+========================= */
 
 main.container {
   max-width: var(--max);
@@ -138,23 +222,87 @@ main.container {
   padding: 2rem 1.25rem 4rem;
 }
 
+/* =========================
+   CARDS / SECTIONS
+========================= */
+
 .card {
   background: white;
   margin-bottom: 1.5rem;
   padding: 1.5rem;
   border-radius: 18px;
   box-shadow: var(--shadow);
+  border: 1px solid rgba(200, 164, 77, 0.14);
+  position: relative;
+  overflow: hidden;
 }
+
+.card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 1.25rem;
+  right: 1.25rem;
+  height: 3px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+}
+
+.card h2 {
+  position: relative;
+  display: inline-block;
+  margin-top: 0;
+  margin-bottom: 1rem;
+}
+
+.card h2::after {
+  content: "";
+  display: block;
+  width: 65%;
+  height: 3px;
+  margin-top: 0.35rem;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+}
+
+/* =========================
+   FORM
+========================= */
 
 form {
   display: grid;
   gap: 0.75rem;
 }
 
-input, select, textarea, button {
+input,
+select,
+textarea,
+button {
   padding: 0.75rem;
   font-size: 1rem;
 }
+
+input,
+select,
+textarea {
+  border: 1px solid rgba(156, 122, 47, 0.18);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border: 1px solid var(--accent);
+  box-shadow: 0 0 0 4px var(--accent-glow);
+}
+
+/* =========================
+   GALLERY
+========================= */
 
 .gallery-grid {
   display: grid;
@@ -167,7 +315,19 @@ input, select, textarea, button {
   width: 100%;
   object-fit: cover;
   border-radius: 14px;
+  border: 1px solid rgba(200, 164, 77, 0.14);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
+
+.gallery-grid img:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.10);
+}
+
+/* =========================
+   FOOTER
+========================= */
 
 .site-footer {
   text-align: center;
@@ -175,13 +335,29 @@ input, select, textarea, button {
   color: var(--muted);
 }
 
+/* =========================
+   MOBILE
+========================= */
+
 @media (max-width: 768px) {
   .nav-inner {
     flex-direction: column;
     align-items: flex-start;
   }
 
+  .brand-logo {
+    height: 44px;
+  }
+
   .hero {
     min-height: 72vh;
+  }
+
+  .hero-content {
+    padding: 1.5rem;
+  }
+
+  .nav-links {
+    gap: 0.8rem;
   }
 }
