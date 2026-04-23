@@ -1,8 +1,8 @@
 // ====== CONFIG ======
 const SUPABASE_URL = "https://jhvdlivheqnstpcuyswg.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpodmRsaXZoZXFuc3RwY3V5c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTE1MTAsImV4cCI6MjA5MjI4NzUxMH0.r_cp6yx_m2t4OFkP0xvKIF9yxO7zVtgtZxv1HqjZZZc";
+const SUPABASE_ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpodmRsaXZoZXFuc3RwY3V5c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTE1MTAsImV4cCI6MjA5MjI4NzUxMH0.r_cp6yx_m2t4OFkP0xvKIF9yxO7zVtgtZxv1HqjZZZc";
 
-// Create Supabase client
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ====== GLOBAL STATE ======
@@ -33,8 +33,12 @@ const loginBtn = document.getElementById("loginBtn");
 const loginFirstName = document.getElementById("loginFirstName");
 const loginLastName = document.getElementById("loginLastName");
 const loginError = document.getElementById("loginError");
-const guestList = document.getElementById("guestList");
 
+const navUser = document.getElementById("navUser");
+const navLoggedInName = document.getElementById("navLoggedInName");
+const logoutBtn = document.getElementById("logoutBtn");
+
+const guestList = document.getElementById("guestList");
 const form = document.getElementById("rsvp-form");
 const status = document.getElementById("status");
 
@@ -56,6 +60,10 @@ function setStatus(message, isError = false) {
   if (!status) return;
   status.textContent = message;
   status.style.color = isError ? "#a94442" : "";
+}
+
+function clearStatus() {
+  setStatus("");
 }
 
 function openLoginModal() {
@@ -108,17 +116,69 @@ function lockNameFields(firstName, lastName) {
 function unlockNameFields() {
   if (firstNameInput) {
     firstNameInput.readOnly = false;
+    firstNameInput.value = "";
   }
 
   if (lastNameInput) {
     lastNameInput.readOnly = false;
+    lastNameInput.value = "";
   }
 }
 
 function getDisplayName(member) {
   if (!member) return "";
-  if (member.display_name && member.display_name.trim()) return member.display_name.trim();
+
+  if (member.display_name && member.display_name.trim()) {
+    return member.display_name.trim();
+  }
+
   return `${member.first_name || ""} ${member.last_name || ""}`.trim();
+}
+
+function updateLoginStateUI(displayName = "") {
+  if (navLoggedInName) {
+    navLoggedInName.textContent = displayName || "Guest";
+  }
+
+  if (navUser) {
+    if (displayName) {
+      navUser.classList.remove("hidden");
+    } else {
+      navUser.classList.add("hidden");
+    }
+  }
+}
+
+function clearStoredSession() {
+  localStorage.removeItem("party_id");
+  localStorage.removeItem("party_member_name");
+}
+
+function resetRsvpFormForLogout() {
+  if (form) form.reset();
+  unlockNameFields();
+
+  if (guestList) {
+    guestList.innerHTML = "";
+  }
+
+  currentParty = null;
+  currentPartyData = null;
+  invitedMembers = [];
+  pendingRsvpData = null;
+  clearStatus();
+  updateLoginStateUI("");
+}
+
+function logoutCurrentGuest() {
+  resetRsvpFormForLogout();
+  clearStoredSession();
+  clearLoginError();
+
+  if (loginFirstName) loginFirstName.value = "";
+  if (loginLastName) loginLastName.value = "";
+
+  openLoginModal();
 }
 
 // ====== PARTY / INVITE LOOKUP ======
@@ -158,33 +218,38 @@ async function loadPartyData(partyId) {
   return true;
 }
 
+function createGuestEntry(member) {
+  const wrapper = document.createElement("div");
+  wrapper.className = "guest-entry";
+
+  const memberName = getDisplayName(member);
+
+  wrapper.innerHTML = `
+    <label class="guest-entry-label">
+      <span class="guest-entry-name">${memberName}</span>
+      <select class="guest-attendance" data-member-id="${member.id}">
+        <option value="">Select</option>
+        <option value="yes">Attending</option>
+        <option value="no">Not Attending</option>
+      </select>
+    </label>
+  `;
+
+  return wrapper;
+}
+
 function renderGuestList() {
   if (!guestList) return;
 
   guestList.innerHTML = "";
 
   if (!invitedMembers.length) {
-    guestList.innerHTML = `<p class="guest-list-empty">No invited guests found for this party.</p>`;
+    guestList.innerHTML = `<p>No invited guests found for this party.</p>`;
     return;
   }
 
   invitedMembers.forEach((member) => {
-    const wrapper = document.createElement("div");
-    wrapper.className = "guest-entry";
-
-    const memberName = getDisplayName(member);
-
-    wrapper.innerHTML = `
-      <label class="guest-entry-label">
-        <span class="guest-entry-name">${memberName}</span>
-        <select class="guest-attendance" data-member-id="${member.id}">
-          <option value="yes">Attending</option>
-          <option value="no">Not Attending</option>
-        </select>
-      </label>
-    `;
-
-    guestList.appendChild(wrapper);
+    guestList.appendChild(createGuestEntry(member));
   });
 }
 
@@ -212,30 +277,38 @@ async function signInInviteLookup() {
 
     if (error) {
       console.error("Invite lookup error:", error);
-      if (loginError) loginError.textContent = "Something went wrong looking up your invitation.";
+      if (loginError) {
+        loginError.textContent = "Something went wrong looking up your invitation.";
+      }
       return;
     }
 
     if (!data || data.length === 0) {
-      if (loginError) loginError.textContent = "Name not found. Please try again.";
+      if (loginError) {
+        loginError.textContent = "Name not found. Please try again.";
+      }
       return;
     }
 
     const member = data[0];
-    currentParty = member.party_id;
+    const displayName = getDisplayName(member);
 
+    currentParty = member.party_id;
     localStorage.setItem("party_id", member.party_id);
-    localStorage.setItem("party_member_name", getDisplayName(member));
+    localStorage.setItem("party_member_name", displayName);
 
     await loadPartyData(member.party_id);
     await loadPartyMembers(member.party_id);
 
     lockNameFields(member.first_name, member.last_name);
+    updateLoginStateUI(displayName);
     closeLoginModal();
-    setStatus("");
+    clearStatus();
   } catch (err) {
     console.error("Unexpected invite lookup error:", err);
-    if (loginError) loginError.textContent = "Unexpected error occurred. Please try again.";
+    if (loginError) {
+      loginError.textContent = "Unexpected error occurred. Please try again.";
+    }
   } finally {
     loginBtn.disabled = false;
   }
@@ -243,7 +316,9 @@ async function signInInviteLookup() {
 
 async function restoreSavedParty() {
   const savedParty = localStorage.getItem("party_id");
+
   if (!savedParty) {
+    updateLoginStateUI("");
     openLoginModal();
     return;
   }
@@ -254,25 +329,22 @@ async function restoreSavedParty() {
   const loadedMembers = await loadPartyMembers(savedParty);
 
   if (!loadedParty || !loadedMembers || invitedMembers.length === 0) {
-    localStorage.removeItem("party_id");
-    localStorage.removeItem("party_member_name");
-    currentParty = null;
-    currentPartyData = null;
-    invitedMembers = [];
-    unlockNameFields();
+    clearStoredSession();
+    resetRsvpFormForLogout();
     openLoginModal();
     return;
   }
 
   const savedMemberName = localStorage.getItem("party_member_name");
-  if (savedMemberName && firstNameInput && lastNameInput) {
+
+  if (savedMemberName) {
     const parts = savedMemberName.split(" ");
     if (parts.length >= 2) {
-      firstNameInput.value = parts[0];
-      lastNameInput.value = parts.slice(1).join(" ");
-      firstNameInput.readOnly = true;
-      lastNameInput.readOnly = true;
+      lockNameFields(parts[0], parts.slice(1).join(" "));
     }
+    updateLoginStateUI(savedMemberName);
+  } else {
+    updateLoginStateUI("");
   }
 
   closeLoginModal();
@@ -294,7 +366,7 @@ function collectGuestResponses() {
 }
 
 function countAttendingGuests(guestResponses) {
-  return guestResponses.filter((g) => g.attendance === "yes").length;
+  return guestResponses.filter((guest) => guest.attendance === "yes").length;
 }
 
 if (form) {
@@ -323,11 +395,16 @@ if (form) {
     const guestResponses = collectGuestResponses();
 
     if (!guestResponses.length) {
-      // fallback to single RSVP if guest list is not present
       if (!attendance) {
         setStatus("Please choose whether you are attending.", true);
         return;
       }
+    }
+
+    const unansweredGuest = guestResponses.find((guest) => !guest.attendance);
+    if (guestResponses.length && unansweredGuest) {
+      setStatus("Please choose attending or not attending for each invited guest.", true);
+      return;
     }
 
     const yesCount = guestResponses.length
@@ -360,6 +437,7 @@ if (form) {
     };
 
     const fullName = `${firstName} ${lastName}`.trim();
+
     openConfirmModal(
       `Please confirm this RSVP is only for ${fullName} and does not include any uninvited guests or +1's.`
     );
@@ -382,6 +460,7 @@ if (confirmSubmit) {
 
     confirmSubmit.disabled = true;
     if (confirmCancel) confirmCancel.disabled = true;
+
     setStatus("Sending RSVP...");
 
     try {
@@ -389,7 +468,9 @@ if (confirmSubmit) {
 
       if (pendingRsvpData.guestResponses && pendingRsvpData.guestResponses.length > 0) {
         rowsToInsert = pendingRsvpData.guestResponses.map((guest) => {
-          const member = invitedMembers.find((m) => String(m.id) === String(guest.invite_member_id));
+          const member = invitedMembers.find(
+            (m) => String(m.id) === String(guest.invite_member_id)
+          );
 
           return {
             party_id: currentParty,
@@ -438,7 +519,6 @@ if (confirmSubmit) {
       pendingRsvpData = null;
       closeConfirmModal();
 
-      // Restore locked logged-in name after reset
       const savedMemberName = localStorage.getItem("party_member_name");
       if (savedMemberName) {
         const parts = savedMemberName.split(" ");
@@ -447,7 +527,6 @@ if (confirmSubmit) {
         }
       }
 
-      // Re-render guest list so selections are visible again after reset
       renderGuestList();
     } catch (err) {
       console.error("Unexpected error:", err);
@@ -520,7 +599,6 @@ function updateWeddingCountdown() {
 
   const weddingDate = new Date(2027, 4, 8); // May 8, 2027
   const now = new Date();
-
   const diffMs = weddingDate.getTime() - now.getTime();
   const msPerDay = 1000 * 60 * 60 * 24;
   const daysLeft = Math.ceil(diffMs / msPerDay);
@@ -557,5 +635,11 @@ if (loginFirstName) {
 if (loginLastName) {
   loginLastName.addEventListener("keydown", (e) => {
     if (e.key === "Enter") signInInviteLookup();
+  });
+}
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    logoutCurrentGuest();
   });
 }

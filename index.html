@@ -4,35 +4,243 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Gabriel & Emmaleigh | Wedding</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600&family=Great+Vibes&display=swap" rel="stylesheet"/>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Inter:wght@400;500;600&family=Playfair+Display:wght@500;600&family=Great+Vibes&display=swap"
+    rel="stylesheet"
+  />
+  <link rel="stylesheet" href="style.css" />
+
+  <style>
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      width: min(1180px, calc(100% - 2rem));
+      margin: 0 auto;
+      padding: 0.85rem 0;
+      position: relative;
+      z-index: 1;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-left: auto;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .nav-user.hidden {
+      display: none;
+    }
+
+    .nav-user-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.55rem 0.9rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.72);
+      border: 1px solid rgba(156, 122, 47, 0.14);
+      box-shadow: 0 8px 18px rgba(58, 38, 30, 0.05);
+      color: var(--text);
+      font-size: 0.95rem;
+      line-height: 1.2;
+      white-space: nowrap;
+    }
+
+    .nav-user-label {
+      color: var(--muted);
+      font-weight: 600;
+    }
+
+    .nav-user-name {
+      font-weight: 700;
+    }
+
+    .nav-logout-btn {
+      border: 1px solid rgba(156, 122, 47, 0.18);
+      background: rgba(255, 255, 255, 0.82);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 0.58rem 1rem;
+      font: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+      box-shadow: 0 8px 18px rgba(58, 38, 30, 0.05);
+    }
+
+    .nav-logout-btn:hover {
+      transform: translateY(-1px);
+      background: rgba(255, 255, 255, 0.95);
+    }
+
+    .brand {
+      text-decoration: none;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .rsvp-shell {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .rsvp-card {
+      background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,243,238,0.96));
+      border: 1px solid rgba(156, 122, 47, 0.14);
+      border-radius: 28px;
+      box-shadow: 0 18px 40px rgba(58, 38, 30, 0.08);
+      padding: clamp(1.25rem, 2vw, 2rem);
+    }
+
+    .rsvp-header {
+      text-align: center;
+      max-width: 720px;
+      margin: 0 auto 1.5rem;
+    }
+
+    .rsvp-header p {
+      color: var(--muted);
+      margin-bottom: 0;
+    }
+
+    .rsvp-panel-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+      gap: 1.25rem;
+      align-items: start;
+    }
+
+    .rsvp-side-card {
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(156, 122, 47, 0.12);
+      border-radius: 22px;
+      padding: 1rem 1rem 1.1rem;
+    }
+
+    .rsvp-side-card h3 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+    }
+
+    .rsvp-side-card p {
+      color: var(--muted);
+      margin-bottom: 0.9rem;
+    }
+
+    .locked-name-note {
+      font-size: 0.92rem;
+      color: var(--muted);
+      margin-top: -0.15rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .form-section-title {
+      font-size: 0.92rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      font-weight: 700;
+      margin-bottom: 0.15rem;
+    }
+
+    .form-help {
+      color: var(--muted);
+      font-size: 0.95rem;
+      margin-top: -0.1rem;
+      margin-bottom: 0.15rem;
+    }
+
+    .rsvp-form .btn,
+    .rsvp-form button[type="submit"] {
+      justify-self: start;
+    }
+
+    .guest-list-title {
+      margin: 0 0 0.35rem;
+      font-size: 1.05rem;
+    }
+
+    @media (max-width: 980px) {
+      .nav-inner {
+        align-items: flex-start;
+      }
+
+      .nav-links {
+        flex: 1 1 100%;
+      }
+
+      .nav-user {
+        width: 100%;
+        justify-content: flex-start;
+        margin-left: 0;
+      }
+
+      .rsvp-panel-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 720px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .nav-user-pill,
+      .nav-logout-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+  </style>
 </head>
 <body>
-  <div id="loginModal" class="modal">
-  <div class="modal-content">
-    <h2>You're Invited! 💍</h2>
-    <p>Please enter your name to find your invitation</p>
+  <div id="loginModal" class="modal" aria-hidden="false">
+    <div class="modal-content">
+      <h2>You're Invited!</h2>
+      <p>Please enter your name to find your invitation</p>
 
-    <input type="text" id="loginFirstName" placeholder="First Name" />
-    <input type="text" id="loginLastName" placeholder="Last Name" />
-
-    <button id="loginBtn">Find My Invitation</button>
-    <p id="loginError" style="color:red;"></p>
+      <input type="text" id="loginFirstName" placeholder="First Name" />
+      <input type="text" id="loginLastName" placeholder="Last Name" />
+      <button id="loginBtn" type="button">Find My Invitation</button>
+      <p id="loginError"></p>
+    </div>
   </div>
-</div>
+
   <nav class="site-nav">
     <div class="nav-inner">
-      <a href="#" class="brand">G & E</a>
+      <a href="#home" class="brand">G &amp; E</a>
+
       <div class="nav-links">
         <a href="#journey">Our Journey</a>
         <a href="#details">Details</a>
         <a href="#registry">Registry</a>
         <a href="#honeyfund">Honeyfund</a>
         <a href="#rsvp">RSVP</a>
-        <div class="countdown-wrap" aria-live="polite">
+        <div class="countdown-wrap" aria-live="polite"></div>
+      </div>
+
+      <div id="navUser" class="nav-user hidden" aria-live="polite">
+        <div class="nav-user-pill">
+          <span class="nav-user-label">Logged in as</span>
+          <span id="navLoggedInName" class="nav-user-name">Guest</span>
+        </div>
+        <button id="logoutBtn" class="nav-logout-btn" type="button">Logout</button>
       </div>
     </div>
   </nav>
@@ -41,46 +249,49 @@
     <div class="hero-overlay"></div>
 
     <div class="hero-slideshow">
-      <img src="images/photo1.jpg" class="slide active" alt="Gabriel and Emmaleigh photo 1">
-      <img src="images/photo2.jpg" class="slide" alt="Gabriel and Emmaleigh photo 2">
-      <img src="images/photo3.jpg" class="slide" alt="Gabriel and Emmaleigh photo 3">
-      <img src="images/photo4.jpg" class="slide" alt="Gabriel and Emmaleigh photo 4">
-      <img src="images/photo5.jpg" class="slide" alt="Gabriel and Emmaleigh photo 5">
-      <img src="images/photo6.jpg" class="slide" alt="Gabriel and Emmaleigh photo 6">
-      <img src="images/photo7.jpg" class="slide" alt="Gabriel and Emmaleigh photo 7">
-      <img src="images/photo8.jpg" class="slide" alt="Gabriel and Emmaleigh photo 8">
+      <img src="images/photo1.jpg" class="slide active" alt="Gabriel and Emmaleigh photo 1" />
+      <img src="images/photo2.jpg" class="slide" alt="Gabriel and Emmaleigh photo 2" />
+      <img src="images/photo3.jpg" class="slide" alt="Gabriel and Emmaleigh photo 3" />
+      <img src="images/photo4.jpg" class="slide" alt="Gabriel and Emmaleigh photo 4" />
+      <img src="images/photo5.jpg" class="slide" alt="Gabriel and Emmaleigh photo 5" />
+      <img src="images/photo6.jpg" class="slide" alt="Gabriel and Emmaleigh photo 6" />
+      <img src="images/photo7.jpg" class="slide" alt="Gabriel and Emmaleigh photo 7" />
+      <img src="images/photo8.jpg" class="slide" alt="Gabriel and Emmaleigh photo 8" />
     </div>
 
-    <div class="hero-content hero-editorial">
-      <h1>Gabriel & Emmaleigh</h1>
-      <p class="hero-date-line">Saturday, May 8, 2027 • Picayune, MS</p>
-      <div class="countdown-editorial" aria-live="polite">
+    <div class="hero-content">
+      <p class="hero-kicker">We’re getting married</p>
+      <h1>Gabriel &amp; Emmaleigh</h1>
+      <p class="hero-date">Saturday, May 8, 2027 • Picayune, MS</p>
+      <div class="countdown-display">
         <span id="countdown-days">--</span>
-        <span class="countdown-editorial-label">days to go!</span>
+        <span>days to go!</span>
       </div>
+      <a href="#rsvp" class="hero-rsvp">RSVP</a>
     </div>
   </header>
 
-  <main class="container">
-    <section class="card intro-card">
+  <main>
+    <section id="welcome" class="card">
       <h2>Welcome</h2>
-      <p>
-        Add info
-      </p>
+      <p>Add info</p>
     </section>
 
     <section id="journey" class="card">
       <h2>Our Journey</h2>
-      <div class="timeline">
-        <div class="timeline-item">
+
+      <div class="details-grid">
+        <div>
           <h3>How We Met</h3>
           <p>Add info</p>
         </div>
-        <div class="timeline-item">
+
+        <div>
           <h3>Our Favorite Memories</h3>
           <p>Add info</p>
         </div>
-        <div class="timeline-item">
+
+        <div>
           <h3>The Proposal</h3>
           <p>Add info</p>
         </div>
@@ -89,19 +300,23 @@
 
     <section id="details" class="card">
       <h2>Wedding Details</h2>
+
       <div class="details-grid">
         <div>
           <h3>Date</h3>
           <p>May 8, 2027</p>
         </div>
+
         <div>
           <h3>Ceremony</h3>
           <p>Add info</p>
         </div>
+
         <div>
           <h3>Reception</h3>
           <p>Add info</p>
         </div>
+
         <div>
           <h3>Dress Code</h3>
           <p>Add info</p>
@@ -111,71 +326,127 @@
 
     <section id="registry" class="card">
       <h2>Registry</h2>
-      <p>visit our registry below.</p>
+      <p>Visit our registry below.</p>
       <div class="button-row">
-        <a class="secondary-btn" href="https://example.com" ...>View Registry</a>      </div>
+        <a class="secondary-btn" href="https://example.com" target="_blank" rel="noopener">View Registry</a>
+      </div>
     </section>
 
     <section id="honeyfund" class="card">
       <h2>Honeyfund</h2>
-      <p>
-        Add info
-      </p>
+      <p>Add info</p>
       <div class="button-row">
-        <a class="secondary-btn" href="https://example.com" ...>View Honeyfund</a>      </div>
+        <a class="secondary-btn" href="https://example.com" target="_blank" rel="noopener">View Honeyfund</a>
       </div>
     </section>
 
-    <!-- RSVP submission details (Form Submission) -->
     <section id="rsvp" class="section">
-      <div class="container">
-        <h2>RSVP</h2>
+      <div class="container rsvp-shell">
+        <div class="rsvp-card">
+          <div class="rsvp-header">
+            <h2>RSVP</h2>
+            <p>
+              Please respond for the invited guest listed on your invitation.
+              We are not offering additional +1s.
+            </p>
+          </div>
 
-        <form id="rsvp-form" class="rsvp-form">
-          <div class="form-row">
-            <div class="form-group">
-              <label for="first-name">First Name *</label>
-              <input type="text" id="first-name" name="first_name" required />
+          <div class="rsvp-panel-grid">
+            <div>
+              <form id="rsvp-form" class="rsvp-form">
+                <div class="form-section-title">Your information</div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="first-name">First Name *</label>
+                    <input type="text" id="first-name" name="first_name" required />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="last-name">Last Name *</label>
+                    <input type="text" id="last-name" name="last_name" required />
+                  </div>
+                </div>
+
+                <p class="locked-name-note">
+                  Once you log in, your name will stay locked to your invitation.
+                </p>
+
+                <div class="form-section-title">Attendance</div>
+                <div class="form-group">
+                  <label for="attendance">Attending? *</label>
+                  <select id="attendance" name="attendance" required>
+                    <option value="">Select one</option>
+                    <option value="yes">Yes</option>
+                    <option value="no">No</option>
+                  </select>
+                </div>
+
+                <div class="form-section-title">Optional details</div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="soda-preference">Soda Preference</label>
+                    <input
+                      type="text"
+                      id="soda-preference"
+                      name="soda_preference"
+                      placeholder="Coke, Sprite, Dr Pepper..."
+                    />
+                  </div>
+
+                  <div class="form-group">
+                    <label for="song-request">Song Request</label>
+                    <input
+                      type="text"
+                      id="song-request"
+                      name="song_request"
+                      placeholder="Add a must-play song"
+                    />
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="seating-requests">Seating Requests</label>
+                  <input
+                    type="text"
+                    id="seating-requests"
+                    name="seating_requests"
+                    placeholder="Anything we should know?"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="message-to-couple">Message to the Couple</label>
+                  <textarea
+                    id="message-to-couple"
+                    name="message_to_couple"
+                    rows="4"
+                    placeholder="Leave us a note!"
+                  ></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Send RSVP</button>
+                <p id="status" class="form-status" aria-live="polite"></p>
+              </form>
             </div>
 
-            <div class="form-group">
-              <label for="last-name">Last Name *</label>
-              <input type="text" id="last-name" name="last_name" required />
-            </div>
+            <aside class="rsvp-side-card">
+              <h3 class="guest-list-title">Your invitation</h3>
+              <p>
+                The invited guest or guests connected to your party will appear here after login.
+              </p>
+              <div id="guestList"></div>
+            </aside>
           </div>
-
-          <div class="form-group">
-            <label for="attendance">Attending? *</label>
-            <select id="attendance" name="attendance" required>
-              <option value="">Select one</option>
-              <option value="Yes">Yes</option>
-              <option value="No">No</option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="message-to-couple">Message to the Couple</label>
-            <textarea
-              id="message-to-couple"
-              name="message_to_couple"
-              rows="4"
-              placeholder="Leave us a note!"
-            ></textarea>
-          </div>
-
-          <button type="submit" class="btn btn-primary">Send RSVP</button>
-          <p id="status" class="form-status" aria-live="polite"></p>
-        </form>
-        <div id="guestList"></div>
+        </div>
       </div>
     </section>
 
-    <!-- RSVP Confirmation Button -->
     <div id="rsvp-confirm-modal" class="confirm-modal hidden" aria-hidden="true">
       <div class="confirm-modal-card">
         <h3>Confirm RSVP</h3>
         <p id="confirm-text"></p>
-
         <div class="confirm-actions">
           <button type="button" id="confirm-cancel" class="btn btn-secondary">Go Back</button>
           <button type="button" id="confirm-submit" class="btn btn-primary">Yes, Submit RSVP</button>
@@ -186,10 +457,7 @@
 
   <footer class="site-footer">
     <p class="footer-text">Made with love for our friends and family</p>
-
-    <img src="assets/logo.png"
-        alt="Gabriel and Emmaleigh logo"
-        class="footer-logo" />
+    <img src="assets/logo.png" alt="Gabriel and Emmaleigh logo" class="footer-logo" />
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
