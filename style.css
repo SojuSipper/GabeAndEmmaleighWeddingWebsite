@@ -3,6 +3,7 @@
    ========================= */
 :root {
   --bg: #f7f2ee;
+  --bg-soft: #fbf7f3;
   --card: rgba(255, 255, 255, 0.92);
   --text: #2f2a28;
   --muted: #6f625b;
@@ -12,8 +13,13 @@
   --accent-soft: #efe2b8;
   --accent-glow: rgba(200, 164, 77, 0.18);
 
+  --sage: #9db8a5;
+  --hydrangea: #a9bfd9;
+  --hydrangea-dark: #6f86a6;
+
   --line: rgba(156, 122, 47, 0.20);
   --shadow: 0 18px 40px rgba(58, 38, 30, 0.10);
+  --shadow-soft: 0 14px 30px rgba(58, 38, 30, 0.08);
   --radius: 24px;
   --max: 1100px;
 }
@@ -38,6 +44,10 @@ body {
     linear-gradient(to bottom, var(--bg), var(--bg-soft));
   color: var(--text);
   line-height: 1.6;
+}
+
+body.modal-open {
+  overflow: hidden;
 }
 
 h1, h2, h3 {
@@ -345,17 +355,15 @@ p {
   letter-spacing: 0.06em;
 }
 
-
 /* =========================
    BUTTONS
    ========================= */
-
 .primary-btn,
 .secondary-btn,
 button {
   display: inline-block;
   padding: 0.75rem 1.3rem;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
@@ -363,30 +371,27 @@ button {
   transition: all 0.25s ease;
 }
 
-/* ===== PRIMARY (RSVP) ===== */
 .primary-btn {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #ffffff;
   border: 1px solid rgba(0, 0, 0, 0.05);
-
   box-shadow:
     0 6px 18px rgba(200, 164, 77, 0.25),
     0 2px 6px rgba(0, 0, 0, 0.08);
 }
 
-.primary-btn:hover {
+.primary-btn:hover,
+button:hover {
   transform: translateY(-1px);
   box-shadow:
     0 10px 24px rgba(200, 164, 77, 0.32),
     0 4px 10px rgba(0, 0, 0, 0.10);
 }
 
-/* ===== SECONDARY (Registry / Honeyfund) ===== */
 .secondary-btn {
   background: rgba(200, 164, 77, 0.10);
   color: var(--accent-dark);
   border: 1px solid rgba(200, 164, 77, 0.35);
-
   backdrop-filter: blur(4px);
 }
 
@@ -394,23 +399,30 @@ button {
   background: var(--accent);
   color: #ffffff;
   border-color: var(--accent);
-
   transform: translateY(-1px);
   box-shadow: 0 8px 20px rgba(200, 164, 77, 0.25);
 }
 
-/* ===== FORM BUTTON (RSVP submit) ===== */
-button[type="submit"] {
+button[type="submit"],
+#loginBtn,
+#confirm-submit {
   background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: #ffffff;
   border: none;
-
   box-shadow: 0 6px 16px rgba(200, 164, 77, 0.22);
 }
 
-button[type="submit"]:hover {
+button[type="submit"]:hover,
+#loginBtn:hover,
+#confirm-submit:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 22px rgba(200, 164, 77, 0.28);
+}
+
+#confirm-cancel {
+  background: rgba(200, 164, 77, 0.10);
+  color: var(--accent-dark);
+  border: 1px solid rgba(200, 164, 77, 0.35);
 }
 
 /* =========================
@@ -511,6 +523,229 @@ textarea:focus {
     0 0 0 4px rgba(201, 140, 167, 0.14),
     0 0 0 8px rgba(169, 191, 217, 0.07);
   background: white;
+}
+
+/* =========================
+   LOGIN MODAL POPUP
+   ========================= */
+.modal,
+#loginModal {
+  position: fixed;
+  inset: 0;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background:
+    linear-gradient(rgba(32, 24, 22, 0.40), rgba(32, 24, 22, 0.46)),
+    radial-gradient(circle at top, rgba(201, 140, 167, 0.14), transparent 35%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 10000;
+}
+
+.modal.hidden,
+#loginModal.hidden {
+  display: none !important;
+}
+
+.modal-content,
+#loginModal .modal-content {
+  width: min(100%, 520px);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.97),
+    rgba(252, 249, 246, 0.95)
+  );
+  border: 1px solid rgba(156, 122, 47, 0.16);
+  border-radius: 26px;
+  padding: 2rem 1.5rem;
+  box-shadow:
+    0 24px 70px rgba(35, 24, 20, 0.20),
+    0 8px 24px rgba(200, 164, 77, 0.12);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  animation: modalPopIn 0.35s ease;
+}
+
+.modal-content::before,
+#loginModal .modal-content::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 5px;
+  background: linear-gradient(
+    90deg,
+    rgba(201, 140, 167, 0.65),
+    rgba(200, 164, 77, 0.85),
+    rgba(169, 191, 217, 0.65)
+  );
+}
+
+.modal-content h2,
+#loginModal .modal-content h2 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(2rem, 4vw, 2.7rem);
+  color: var(--text);
+}
+
+.modal-content p,
+#loginModal .modal-content p {
+  margin: 0 0 1rem;
+  color: var(--muted);
+}
+
+#loginModal input {
+  width: 100%;
+  margin-bottom: 0.85rem;
+}
+
+#loginBtn {
+  width: 100%;
+  margin-top: 0.25rem;
+}
+
+#loginError {
+  min-height: 1.2em;
+  margin-top: 0.9rem;
+  color: #a94442;
+  font-size: 0.95rem;
+}
+
+@keyframes modalPopIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* =========================
+   RSVP FORM
+   ========================= */
+.rsvp-form {
+  display: grid;
+  gap: 1rem;
+  max-width: 700px;
+  margin: 0 auto;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.form-group label {
+  font-weight: 600;
+}
+
+.rsvp-form input,
+.rsvp-form select,
+.rsvp-form textarea {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text);
+  font: inherit;
+}
+
+.rsvp-form textarea {
+  resize: vertical;
+}
+
+.form-status {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+/* =========================
+   GUEST LIST
+   ========================= */
+#guestList {
+  display: grid;
+  gap: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.guest-entry {
+  padding: 1rem;
+  border: 1px solid rgba(156, 122, 47, 0.14);
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 243, 238, 0.96));
+  box-shadow: 0 8px 20px rgba(58, 38, 30, 0.05);
+}
+
+.guest-entry-label {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 1rem;
+}
+
+.guest-entry-name {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.guest-attendance {
+  min-width: 160px;
+}
+
+.guest-list-empty {
+  margin: 0;
+  color: var(--muted);
+  text-align: center;
+}
+
+/* =========================
+   CONFIRM MODAL
+   ========================= */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 9999;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.confirm-modal.hidden {
+  display: none;
+}
+
+.confirm-modal-card {
+  width: min(100%, 480px);
+  background: var(--card);
+  border-radius: 22px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
+  text-align: center;
+  border: 1px solid rgba(156, 122, 47, 0.14);
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  flex-wrap: wrap;
 }
 
 /* =========================
@@ -635,11 +870,34 @@ textarea:focus {
   .footer-logo {
     height: 74px;
   }
+
+  .guest-entry-label {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .guest-attendance {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 /* =========================
    MOBILE
    ========================= */
+@media (max-width: 640px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-content,
+  #loginModal .modal-content,
+  .confirm-modal-card {
+    padding: 1.35rem 1rem;
+    border-radius: 20px;
+  }
+}
+
 @media (max-width: 560px) {
   .brand-logo {
     height: 34px;
@@ -673,86 +931,10 @@ textarea:focus {
   .gallery-grid {
     grid-template-columns: 1fr;
   }
-}
 
-
-.rsvp-form {
-  display: grid;
-  gap: 1rem;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-.form-group {
-  display: grid;
-  gap: 0.45rem;
-}
-
-.form-group label {
-  font-weight: 600;
-}
-
-.rsvp-form input,
-.rsvp-form select,
-.rsvp-form textarea {
-  width: 100%;
-  padding: 0.9rem 1rem;
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  background: rgba(255, 255, 255, 0.95);
-  color: var(--text);
-  font: inherit;
-}
-
-.rsvp-form textarea {
-  resize: vertical;
-}
-
-.form-status {
-  margin-top: 0.5rem;
-  text-align: center;
-}
-
-.confirm-modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 1rem;
-  z-index: 9999;
-}
-
-.confirm-modal.hidden {
-  display: none;
-}
-
-.confirm-modal-card {
-  width: min(100%, 480px);
-  background: var(--card);
-  border-radius: 22px;
-  padding: 1.5rem;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.18);
-  text-align: center;
-}
-
-.confirm-actions {
-  display: flex;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-top: 1.25rem;
-  flex-wrap: wrap;
-}
-
-@media (max-width: 640px) {
-  .form-row {
-    grid-template-columns: 1fr;
+  .modal,
+  #loginModal,
+  .confirm-modal {
+    padding: 0.8rem;
   }
 }
