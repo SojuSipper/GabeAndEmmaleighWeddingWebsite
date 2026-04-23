@@ -492,8 +492,8 @@ if (confirmSubmit) {
           invite_member_id: guest.invite_member_id,
           first_name: member?.first_name || "",
           last_name: member?.last_name || "",
-          attendance: guest.attendance,
-          message_to_couple: pendingRsvpData.messageToCouple
+          attending: guest.attendance,
+          message_to_couple: pendingRsvpData.messageToCouples
         };
       });
 
