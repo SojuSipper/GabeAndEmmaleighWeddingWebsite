@@ -48,9 +48,6 @@ const confirmSubmit = document.getElementById("confirm-submit");
 
 const firstNameInput = document.getElementById("first-name");
 const lastNameInput = document.getElementById("last-name");
-const sodaInput = document.getElementById("soda-preference");
-const songInput = document.getElementById("song-request");
-const seatingInput = document.getElementById("seating-requests");
 const messageInput = document.getElementById("message-to-couple");
 
 // ====== HELPERS ======
@@ -416,9 +413,6 @@ if (form) {
 
     const firstName = normalizeName(firstNameInput?.value);
     const lastName = normalizeName(lastNameInput?.value);
-    const sodaPreference = normalizeName(sodaInput?.value);
-    const songRequest = normalizeName(songInput?.value);
-    const seatingRequests = normalizeName(seatingInput?.value);
     const messageToCouple = normalizeName(messageInput?.value);
 
     if (!firstName || !lastName) {
@@ -457,9 +451,6 @@ if (form) {
       submittedByFirstName: firstName,
       submittedByLastName: lastName,
       messageToCouple,
-      sodaPreference,
-      songRequest,
-      seatingRequests,
       guestResponses
     };
 
@@ -502,9 +493,6 @@ if (confirmSubmit) {
           first_name: member?.first_name || "",
           last_name: member?.last_name || "",
           attendance: guest.attendance,
-          soda_preference: pendingRsvpData.sodaPreference,
-          song_request: pendingRsvpData.songRequest,
-          seating_requests: pendingRsvpData.seatingRequests,
           message_to_couple: pendingRsvpData.messageToCouple
         };
       });
