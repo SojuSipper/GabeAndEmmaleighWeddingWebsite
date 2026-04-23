@@ -1,7 +1,7 @@
 // ====== CONFIG ======
 const SUPABASE_URL = "https://jhvdlivheqnstpcuyswg.supabase.co";
 const SUPABASE_ANON_KEY =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpodmRsaXZoZXFuc3RwY3V5c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTE1MTAsImV4cCI6MjA5MjI4NzUxMH0.r_cp6yx_m2t4OFkP0xvKIF9yxO7zVtgtZxv1HqjZZZc";
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmRsaXZoZXFuc3RwY3V5c3dnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY3MTE1MTAsImV4cCI6MjA5MjI4NzUxMH0.r_cp6yx_m2t4OFkP0xvKIF9yxO7zVtgtZxv1HqjZZZc";
 
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -17,7 +17,6 @@ let currentSlide = 0;
 
 function showNextSlide() {
   if (!slides.length) return;
-
   slides[currentSlide].classList.remove("active");
   currentSlide = (currentSlide + 1) % slides.length;
   slides[currentSlide].classList.add("active");
@@ -39,6 +38,7 @@ const navLoggedInName = document.getElementById("navLoggedInName");
 const logoutBtn = document.getElementById("logoutBtn");
 
 const guestList = document.getElementById("guestList");
+const inviteSummary = document.getElementById("inviteSummary");
 const form = document.getElementById("rsvp-form");
 const status = document.getElementById("status");
 
@@ -49,7 +49,6 @@ const confirmSubmit = document.getElementById("confirm-submit");
 
 const firstNameInput = document.getElementById("first-name");
 const lastNameInput = document.getElementById("last-name");
-const attendanceInput = document.getElementById("attendance");
 const sodaInput = document.getElementById("soda-preference");
 const songInput = document.getElementById("song-request");
 const seatingInput = document.getElementById("seating-requests");
@@ -162,6 +161,15 @@ function resetRsvpFormForLogout() {
     guestList.innerHTML = "";
   }
 
+  if (inviteSummary) {
+    inviteSummary.innerHTML = `
+      <li>
+        <span class="invite-summary-name">Log in to begin</span>
+        <span class="invite-summary-note">Your invited guest list will appear here.</span>
+      </li>
+    `;
+  }
+
   currentParty = null;
   currentPartyData = null;
   invitedMembers = [];
@@ -181,6 +189,32 @@ function logoutCurrentGuest() {
   openLoginModal();
 }
 
+function renderInviteSummary() {
+  if (!inviteSummary) return;
+
+  if (!invitedMembers.length) {
+    inviteSummary.innerHTML = `
+      <li>
+        <span class="invite-summary-name">No invited guests found</span>
+        <span class="invite-summary-note">Please double-check the database entry for this party.</span>
+      </li>
+    `;
+    return;
+  }
+
+  inviteSummary.innerHTML = invitedMembers
+    .map((member) => {
+      const displayName = getDisplayName(member);
+      return `
+        <li>
+          <span class="invite-summary-name">${displayName}</span>
+          <span class="invite-summary-note">RSVP will be submitted only for this invited guest.</span>
+        </li>
+      `;
+    })
+    .join("");
+}
+
 // ====== PARTY / INVITE LOOKUP ======
 async function loadPartyMembers(partyId) {
   const { data, error } = await client
@@ -193,11 +227,13 @@ async function loadPartyMembers(partyId) {
     console.error("Error loading party members:", error);
     invitedMembers = [];
     renderGuestList();
+    renderInviteSummary();
     return false;
   }
 
   invitedMembers = data || [];
   renderGuestList();
+  renderInviteSummary();
   return true;
 }
 
@@ -227,8 +263,8 @@ function createGuestEntry(member) {
   wrapper.innerHTML = `
     <label class="guest-entry-label">
       <span class="guest-entry-name">${memberName}</span>
-      <select class="guest-attendance" data-member-id="${member.id}">
-        <option value="">Select</option>
+      <select class="guest-attendance" data-member-id="${member.id}" required>
+        <option value="">Select one</option>
         <option value="yes">Attending</option>
         <option value="no">Not Attending</option>
       </select>
@@ -381,7 +417,6 @@ if (form) {
 
     const firstName = normalizeName(firstNameInput?.value);
     const lastName = normalizeName(lastNameInput?.value);
-    const attendance = attendanceInput?.value || "";
     const sodaPreference = normalizeName(sodaInput?.value);
     const songRequest = normalizeName(songInput?.value);
     const seatingRequests = normalizeName(seatingInput?.value);
@@ -395,23 +430,17 @@ if (form) {
     const guestResponses = collectGuestResponses();
 
     if (!guestResponses.length) {
-      if (!attendance) {
-        setStatus("Please choose whether you are attending.", true);
-        return;
-      }
+      setStatus("No invited guests were found for this party.", true);
+      return;
     }
 
     const unansweredGuest = guestResponses.find((guest) => !guest.attendance);
-    if (guestResponses.length && unansweredGuest) {
+    if (unansweredGuest) {
       setStatus("Please choose attending or not attending for each invited guest.", true);
       return;
     }
 
-    const yesCount = guestResponses.length
-      ? countAttendingGuests(guestResponses)
-      : attendance === "yes"
-        ? 1
-        : 0;
+    const yesCount = countAttendingGuests(guestResponses);
 
     if (
       currentPartyData &&
@@ -432,14 +461,13 @@ if (form) {
       sodaPreference,
       songRequest,
       seatingRequests,
-      guestResponses,
-      fallbackAttendance: attendance
+      guestResponses
     };
 
     const fullName = `${firstName} ${lastName}`.trim();
 
     openConfirmModal(
-      `Please confirm this RSVP is only for ${fullName} and does not include any uninvited guests or +1's.`
+      `Please confirm this RSVP is only for ${fullName} and the invited guests shown on your invitation. It does not include any uninvited guests or +1's.`
     );
   });
 }
@@ -464,40 +492,23 @@ if (confirmSubmit) {
     setStatus("Sending RSVP...");
 
     try {
-      let rowsToInsert = [];
+      const rowsToInsert = pendingRsvpData.guestResponses.map((guest) => {
+        const member = invitedMembers.find(
+          (m) => String(m.id) === String(guest.invite_member_id)
+        );
 
-      if (pendingRsvpData.guestResponses && pendingRsvpData.guestResponses.length > 0) {
-        rowsToInsert = pendingRsvpData.guestResponses.map((guest) => {
-          const member = invitedMembers.find(
-            (m) => String(m.id) === String(guest.invite_member_id)
-          );
-
-          return {
-            party_id: currentParty,
-            invite_member_id: guest.invite_member_id,
-            first_name: member?.first_name || "",
-            last_name: member?.last_name || "",
-            attendance: guest.attendance,
-            soda_preference: pendingRsvpData.sodaPreference,
-            song_request: pendingRsvpData.songRequest,
-            seating_requests: pendingRsvpData.seatingRequests,
-            message_to_couple: pendingRsvpData.messageToCouple
-          };
-        });
-      } else {
-        rowsToInsert = [
-          {
-            party_id: currentParty,
-            first_name: pendingRsvpData.submittedByFirstName,
-            last_name: pendingRsvpData.submittedByLastName,
-            attendance: pendingRsvpData.fallbackAttendance,
-            soda_preference: pendingRsvpData.sodaPreference,
-            song_request: pendingRsvpData.songRequest,
-            seating_requests: pendingRsvpData.seatingRequests,
-            message_to_couple: pendingRsvpData.messageToCouple
-          }
-        ];
-      }
+        return {
+          party_id: currentParty,
+          invite_member_id: guest.invite_member_id,
+          first_name: member?.first_name || "",
+          last_name: member?.last_name || "",
+          attendance: guest.attendance,
+          soda_preference: pendingRsvpData.sodaPreference,
+          song_request: pendingRsvpData.songRequest,
+          seating_requests: pendingRsvpData.seatingRequests,
+          message_to_couple: pendingRsvpData.messageToCouple
+        };
+      });
 
       const { error } = await client.from("rsvps").insert(rowsToInsert);
 
@@ -528,6 +539,7 @@ if (confirmSubmit) {
       }
 
       renderGuestList();
+      renderInviteSummary();
     } catch (err) {
       console.error("Unexpected error:", err);
       setStatus("Unexpected error occurred.", true);
@@ -597,7 +609,7 @@ const countdownDaysEl = document.getElementById("countdown-days");
 function updateWeddingCountdown() {
   if (!countdownDaysEl) return;
 
-  const weddingDate = new Date(2027, 4, 8); // May 8, 2027
+  const weddingDate = new Date(2027, 4, 8);
   const now = new Date();
   const diffMs = weddingDate.getTime() - now.getTime();
   const msPerDay = 1000 * 60 * 60 * 24;
