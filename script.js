@@ -278,8 +278,9 @@ async function signInInviteLookup() {
     const { data, error } = await client
       .from("invite_members")
       .select("*")
-      .ilike("first_name", first)
-      .ilike("last_name", last)
+      .or(
+        `and(first_name.ilike.%${first}%,last_name.ilike.%${last}%),display_name.ilike.%${first} ${last}%`
+      )
       .limit(1);
 
     if (error) {
