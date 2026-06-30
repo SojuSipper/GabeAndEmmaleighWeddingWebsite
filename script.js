@@ -262,7 +262,7 @@ async function loadPartyData(partyId) {
   const { data, error } = await client
     .from("invite_parties")
     .select("*")
-    .eq("party_id", partyId)
+    .eq("id", partyId)
     .single();
 
   if (error) {
@@ -580,13 +580,37 @@ if (confirmSubmit) {
         currentLoggedInMember.mailing_address = pendingRsvpData.mailingAddress;
       }
 
-      if (currentParty) {
-        const { error: partyError } = await client
-          .from("invite_parties")
-          .update({
-            has_responded: true
-          })
-          .eq("id", currentParty);
+      const submittingMemberPartyId = currentLoggedInMember?.party_id;
+
+      if (!submittingMemberPartyId) {
+        setStatus("Could not find the party connected to this invitation member.", true);
+        return;
+      }
+
+      if (String(submittingMemberPartyId) !== String(currentParty)) {
+        setStatus("The submitting member does not match the current invite party.", true);
+        return;
+      }
+
+      const { error: partyError } = await client
+        .from("invite_parties")
+        .update({
+          has_submitted: true
+        })
+        .eq("id", submittingMemberPartyId);
+
+      if (partyError) {
+        console.error("Party submitted update error:", partyError);
+        setStatus(
+          `Your RSVP was saved, but the party submission status failed: ${partyError.message}`,
+          true
+        );
+        return;
+      }
+
+      if (currentPartyData) {
+        currentPartyData.has_submitted = true;
+      }
 
         if (partyError) {
           console.error("Party responded update error:", partyError);
