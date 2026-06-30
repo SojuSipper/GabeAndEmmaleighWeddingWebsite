@@ -262,7 +262,7 @@ async function loadPartyData(partyId) {
   const { data, error } = await client
     .from("invite_parties")
     .select("*")
-    .eq("id", partyId)
+    .eq("party_id", partyId)
     .single();
 
   if (error) {
