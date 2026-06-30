@@ -612,20 +612,6 @@ if (confirmSubmit) {
         currentPartyData.has_submitted = true;
       }
 
-        if (partyError) {
-          console.error("Party responded update error:", partyError);
-          setStatus(
-            `Your RSVP was saved, but the responded status failed: ${partyError.message}`,
-            true
-          );
-          return;
-        }
-
-        if (currentPartyData) {
-          currentPartyData.has_responded = true;
-        }
-      }
-
       setStatus("RSVP submitted successfully!");
       form.reset();
       pendingRsvpData = null;
