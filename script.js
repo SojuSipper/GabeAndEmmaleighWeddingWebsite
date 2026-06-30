@@ -7,6 +7,7 @@ const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // ====== GLOBAL STATE ======
 let currentParty = null;
 let currentPartyData = null;
+let currentLoggedInMember = null;
 let invitedMembers = [];
 let pendingRsvpData = null;
 
@@ -49,6 +50,10 @@ const confirmSubmit = document.getElementById("confirm-submit");
 const firstNameInput = document.getElementById("first-name");
 const lastNameInput = document.getElementById("last-name");
 const messageInput = document.getElementById("message-to-couple");
+
+const mailingAddressInput =
+  document.getElementById("mailing-address") ||
+  document.getElementById("mailingAddress");
 
 // ====== HELPERS ======
 function setStatus(message, isError = false) {
@@ -144,14 +149,21 @@ function updateLoginStateUI(displayName = "") {
   }
 }
 
+function populateMailingAddress(member) {
+  if (!mailingAddressInput) return;
+  mailingAddressInput.value = member?.mailing_address || "";
+}
+
 function clearStoredSession() {
   localStorage.removeItem("party_id");
+  localStorage.removeItem("party_member_id");
   localStorage.removeItem("party_member_name");
 }
 
 function resetRsvpFormForLogout() {
   if (form) form.reset();
   unlockNameFields();
+  populateMailingAddress(null);
 
   if (guestList) {
     guestList.innerHTML = "";
@@ -168,6 +180,7 @@ function resetRsvpFormForLogout() {
 
   currentParty = null;
   currentPartyData = null;
+  currentLoggedInMember = null;
   invitedMembers = [];
   pendingRsvpData = null;
   clearStatus();
@@ -230,6 +243,18 @@ async function loadPartyMembers(partyId) {
   invitedMembers = data || [];
   renderGuestList();
   renderInviteSummary();
+
+  if (currentLoggedInMember?.id) {
+    const refreshedMember = invitedMembers.find(
+      (member) => String(member.id) === String(currentLoggedInMember.id)
+    );
+
+    if (refreshedMember) {
+      currentLoggedInMember = refreshedMember;
+      populateMailingAddress(refreshedMember);
+    }
+  }
+
   return true;
 }
 
@@ -303,7 +328,7 @@ async function signInInviteLookup() {
   try {
     const { data, error } = await client
       .from("invite_members")
-      .select("id, party_id, first_name, last_name, display_name")
+      .select("id, party_id, first_name, last_name, display_name, mailing_address")
       .ilike("first_name", first)
       .ilike("last_name", last);
 
@@ -326,13 +351,17 @@ async function signInInviteLookup() {
     const displayName = getDisplayName(member);
 
     currentParty = member.party_id;
+    currentLoggedInMember = member;
+
     localStorage.setItem("party_id", member.party_id);
+    localStorage.setItem("party_member_id", member.id);
     localStorage.setItem("party_member_name", displayName);
 
     await loadPartyData(member.party_id);
     await loadPartyMembers(member.party_id);
 
     lockNameFields(member.first_name, member.last_name);
+    populateMailingAddress(currentLoggedInMember);
     updateLoginStateUI(displayName);
     closeLoginModal();
     clearStatus();
@@ -348,6 +377,7 @@ async function signInInviteLookup() {
 
 async function restoreSavedParty() {
   const savedParty = localStorage.getItem("party_id");
+  const savedMemberId = localStorage.getItem("party_member_id");
 
   if (!savedParty) {
     updateLoginStateUI("");
@@ -367,13 +397,25 @@ async function restoreSavedParty() {
     return;
   }
 
+  if (savedMemberId) {
+    currentLoggedInMember = invitedMembers.find(
+      (member) => String(member.id) === String(savedMemberId)
+    );
+  }
+
   const savedMemberName = localStorage.getItem("party_member_name");
 
-  if (savedMemberName) {
+  if (currentLoggedInMember) {
+    lockNameFields(currentLoggedInMember.first_name, currentLoggedInMember.last_name);
+    populateMailingAddress(currentLoggedInMember);
+    updateLoginStateUI(getDisplayName(currentLoggedInMember));
+  } else if (savedMemberName) {
     const parts = savedMemberName.split(" ");
     if (parts.length >= 2) {
       lockNameFields(parts[0], parts.slice(1).join(" "));
     }
+
+    populateMailingAddress(null);
     updateLoginStateUI(savedMemberName);
   } else {
     updateLoginStateUI("");
@@ -390,7 +432,7 @@ function collectGuestResponses() {
   guestAttendanceEls.forEach((el) => {
     guestResponses.push({
       invite_member_id: el.dataset.memberId,
-      attendance: el.value
+      attending: el.value
     });
   });
 
@@ -398,7 +440,7 @@ function collectGuestResponses() {
 }
 
 function countAttendingGuests(guestResponses) {
-  return guestResponses.filter((guest) => guest.attendance === "yes").length;
+  return guestResponses.filter((guest) => guest.attending === "yes").length;
 }
 
 if (form) {
@@ -411,12 +453,24 @@ if (form) {
       return;
     }
 
+    if (!currentLoggedInMember?.id) {
+      setStatus("Please log out and look up your invitation again.", true);
+      openLoginModal();
+      return;
+    }
+
     const firstName = normalizeName(firstNameInput?.value);
     const lastName = normalizeName(lastNameInput?.value);
     const messageToCouple = normalizeName(messageInput?.value);
+    const mailingAddress = normalizeName(mailingAddressInput?.value);
 
     if (!firstName || !lastName) {
       setStatus("Please make sure your first and last name are filled out.", true);
+      return;
+    }
+
+    if (mailingAddressInput && !mailingAddress) {
+      setStatus("Please confirm or update your mailing address.", true);
       return;
     }
 
@@ -427,7 +481,7 @@ if (form) {
       return;
     }
 
-    const unansweredGuest = guestResponses.find((guest) => !guest.attendance);
+    const unansweredGuest = guestResponses.find((guest) => !guest.attending);
     if (unansweredGuest) {
       setStatus("Please choose attending or not attending for each invited guest.", true);
       return;
@@ -451,6 +505,7 @@ if (form) {
       submittedByFirstName: firstName,
       submittedByLastName: lastName,
       messageToCouple,
+      mailingAddress,
       guestResponses
     };
 
@@ -492,24 +547,59 @@ if (confirmSubmit) {
           invite_member_id: guest.invite_member_id,
           first_name: member?.first_name || "",
           last_name: member?.last_name || "",
-          attending: guest.attendance,
-          message_to_couple: pendingRsvpData.messageToCouples
+          attending: guest.attending,
+          message_to_couple: pendingRsvpData.messageToCouple
         };
       });
 
-      const { error } = await client.from("rsvps").insert(rowsToInsert);
+      const { error: rsvpError } = await client.from("rsvps").insert(rowsToInsert);
 
-      if (error) {
-        console.error("Supabase error:", error);
-        setStatus(`Something went wrong: ${error.message}`, true);
+      if (rsvpError) {
+        console.error("RSVP insert error:", rsvpError);
+        setStatus(`Something went wrong: ${rsvpError.message}`, true);
         return;
       }
 
+      if (currentLoggedInMember?.id) {
+        const { error: addressError } = await client
+          .from("invite_members")
+          .update({
+            mailing_address: pendingRsvpData.mailingAddress
+          })
+          .eq("id", currentLoggedInMember.id);
+
+        if (addressError) {
+          console.error("Address update error:", addressError);
+          setStatus(
+            `Your RSVP was saved, but the address update failed: ${addressError.message}`,
+            true
+          );
+          return;
+        }
+
+        currentLoggedInMember.mailing_address = pendingRsvpData.mailingAddress;
+      }
+
       if (currentParty) {
-        await client
+        const { error: partyError } = await client
           .from("invite_parties")
-          .update({ has_responded: true })
+          .update({
+            has_responded: true
+          })
           .eq("id", currentParty);
+
+        if (partyError) {
+          console.error("Party responded update error:", partyError);
+          setStatus(
+            `Your RSVP was saved, but the responded status failed: ${partyError.message}`,
+            true
+          );
+          return;
+        }
+
+        if (currentPartyData) {
+          currentPartyData.has_responded = true;
+        }
       }
 
       setStatus("RSVP submitted successfully!");
@@ -517,12 +607,9 @@ if (confirmSubmit) {
       pendingRsvpData = null;
       closeConfirmModal();
 
-      const savedMemberName = localStorage.getItem("party_member_name");
-      if (savedMemberName) {
-        const parts = savedMemberName.split(" ");
-        if (parts.length >= 2) {
-          lockNameFields(parts[0], parts.slice(1).join(" "));
-        }
+      if (currentLoggedInMember) {
+        lockNameFields(currentLoggedInMember.first_name, currentLoggedInMember.last_name);
+        populateMailingAddress(currentLoggedInMember);
       }
 
       renderGuestList();
