@@ -5,26 +5,11 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const client = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ====== GLOBAL STATE ======
-let currentParty = null;
+let currentPartyId = null;
 let currentPartyData = null;
 let currentLoggedInMember = null;
 let invitedMembers = [];
 let pendingRsvpData = null;
-
-// ====== HERO SLIDESHOW ======
-const slides = document.querySelectorAll(".slide");
-let currentSlide = 0;
-
-function showNextSlide() {
-  if (!slides.length) return;
-  slides[currentSlide].classList.remove("active");
-  currentSlide = (currentSlide + 1) % slides.length;
-  slides[currentSlide].classList.add("active");
-}
-
-if (slides.length > 1) {
-  setInterval(showNextSlide, 10000);
-}
 
 // ====== DOM ELEMENTS ======
 const loginModal = document.getElementById("loginModal");
@@ -51,10 +36,6 @@ const firstNameInput = document.getElementById("first-name");
 const lastNameInput = document.getElementById("last-name");
 const messageInput = document.getElementById("message-to-couple");
 
-const mailingAddressInput =
-  document.getElementById("mailing-address") ||
-  document.getElementById("mailingAddress");
-
 // ====== HELPERS ======
 function setStatus(message, isError = false) {
   if (!status) return;
@@ -64,6 +45,17 @@ function setStatus(message, isError = false) {
 
 function clearStatus() {
   setStatus("");
+}
+
+function normalize(value) {
+  return (value || "").trim();
+}
+
+function getDisplayName(member) {
+  return (
+    normalize(member?.display_name) ||
+    `${member?.first_name || ""} ${member?.last_name || ""}`.trim()
+  );
 }
 
 function openLoginModal() {
@@ -93,81 +85,54 @@ function closeConfirmModal() {
   confirmModal.setAttribute("aria-hidden", "true");
 }
 
-function clearLoginError() {
-  if (loginError) loginError.textContent = "";
+function updateLoginStateUI(displayName = "") {
+  if (navLoggedInName) navLoggedInName.textContent = displayName || "Guest";
+
+  if (navUser) {
+    if (displayName) navUser.classList.remove("hidden");
+    else navUser.classList.add("hidden");
+  }
 }
 
-function normalizeName(value) {
-  return (value || "").trim();
-}
+function lockNameFields(member) {
+  if (!member) return;
 
-function lockNameFields(firstName, lastName) {
   if (firstNameInput) {
-    firstNameInput.value = firstName || "";
+    firstNameInput.value = member.first_name || "";
     firstNameInput.readOnly = true;
   }
 
   if (lastNameInput) {
-    lastNameInput.value = lastName || "";
+    lastNameInput.value = member.last_name || "";
     lastNameInput.readOnly = true;
   }
 }
 
-function unlockNameFields() {
+function clearStoredSession() {
+  localStorage.removeItem("invite_member_id");
+  localStorage.removeItem("party_id");
+}
+
+function resetPageForLogout() {
+  currentPartyId = null;
+  currentPartyData = null;
+  currentLoggedInMember = null;
+  invitedMembers = [];
+  pendingRsvpData = null;
+
+  if (form) form.reset();
+
   if (firstNameInput) {
-    firstNameInput.readOnly = false;
     firstNameInput.value = "";
+    firstNameInput.readOnly = false;
   }
 
   if (lastNameInput) {
-    lastNameInput.readOnly = false;
     lastNameInput.value = "";
-  }
-}
-
-function getDisplayName(member) {
-  if (!member) return "";
-
-  if (member.display_name && member.display_name.trim()) {
-    return member.display_name.trim();
+    lastNameInput.readOnly = false;
   }
 
-  return `${member.first_name || ""} ${member.last_name || ""}`.trim();
-}
-
-function updateLoginStateUI(displayName = "") {
-  if (navLoggedInName) {
-    navLoggedInName.textContent = displayName || "Guest";
-  }
-
-  if (navUser) {
-    if (displayName) {
-      navUser.classList.remove("hidden");
-    } else {
-      navUser.classList.add("hidden");
-    }
-  }
-}
-
-function populateMailingAddress(member) {
-  if (!mailingAddressInput) return;
-  mailingAddressInput.value = member?.mailing_address || "";
-}
-
-function clearStoredSession() {
-  localStorage.removeItem("party_id");
-  localStorage.removeItem("party_member_id");
-  localStorage.removeItem("party_member_name");
-}
-
-function resetRsvpFormForLogout() {
-  if (form) form.reset();
-  unlockNameFields();
-  populateMailingAddress(null);
-
-  if (guestList) {
-    guestList.innerHTML = "";
-  }
+  if (guestList) guestList.innerHTML = "";
 
   if (inviteSummary) {
     inviteSummary.innerHTML = `
@@ -178,24 +143,90 @@ function resetRsvpFormForLogout() {
     `;
   }
 
-  currentParty = null;
-  currentPartyData = null;
-  currentLoggedInMember = null;
-  invitedMembers = [];
-  pendingRsvpData = null;
   clearStatus();
   updateLoginStateUI("");
 }
 
-function logoutCurrentGuest() {
-  resetRsvpFormForLogout();
-  clearStoredSession();
-  clearLoginError();
+// ====== LOAD PARTY ======
+async function loadParty(partyId) {
+  const { data, error } = await client
+    .from("invite_parties")
+    .select("*")
+    .eq("id", partyId)
+    .single();
 
-  if (loginFirstName) loginFirstName.value = "";
-  if (loginLastName) loginLastName.value = "";
+  if (error) {
+    console.error("Party load error:", error);
+    return false;
+  }
 
-  openLoginModal();
+  currentPartyData = data;
+  return true;
+}
+
+async function loadPartyMembers(partyId) {
+  const { data, error } = await client
+    .from("invite_members")
+    .select("*")
+    .eq("party_id", partyId)
+    .order("first_name", { ascending: true });
+
+  if (error) {
+    console.error("Member load error:", error);
+    return false;
+  }
+
+  invitedMembers = data || [];
+  renderGuestList();
+  renderInviteSummary();
+  return true;
+}
+
+// ====== RENDER ======
+function renderGuestList() {
+  if (!guestList) return;
+
+  if (!invitedMembers.length) {
+    guestList.innerHTML = `<p>No invited guests found for this party.</p>`;
+    return;
+  }
+
+  guestList.innerHTML = invitedMembers
+    .map((member) => {
+      const attending = member.attending || "";
+      const address = member.mailing_address || "";
+
+      return `
+        <div class="guest-entry" data-member-id="${member.id}">
+          <label class="guest-entry-label">
+            <span class="guest-entry-name">${getDisplayName(member)}</span>
+
+            <label for="address-${member.id}">Mailing Address *</label>
+            <textarea
+              id="address-${member.id}"
+              class="guest-address"
+              data-member-id="${member.id}"
+              rows="3"
+              required
+              placeholder="Street address, city, state, ZIP"
+            >${address}</textarea>
+
+            <label for="attendance-${member.id}">RSVP Status *</label>
+            <select
+              id="attendance-${member.id}"
+              class="guest-attendance"
+              data-member-id="${member.id}"
+              required
+            >
+              <option value="">Select one</option>
+              <option value="yes" ${attending === "yes" ? "selected" : ""}>Attending</option>
+              <option value="no" ${attending === "no" ? "selected" : ""}>Not Attending</option>
+            </select>
+          </label>
+        </div>
+      `;
+    })
+    .join("");
 }
 
 function renderInviteSummary() {
@@ -205,7 +236,7 @@ function renderInviteSummary() {
     inviteSummary.innerHTML = `
       <li>
         <span class="invite-summary-name">No invited guests found</span>
-        <span class="invite-summary-note">Please double-check the database entry for this party.</span>
+        <span class="invite-summary-note">Please double-check this party in Supabase.</span>
       </li>
     `;
     return;
@@ -213,113 +244,31 @@ function renderInviteSummary() {
 
   inviteSummary.innerHTML = invitedMembers
     .map((member) => {
-      const displayName = getDisplayName(member);
+      const statusText = member.has_rsvped
+        ? member.attending === "yes"
+          ? "RSVP: Attending"
+          : "RSVP: Not attending"
+        : "RSVP: Not submitted yet";
+
       return `
         <li>
-          <span class="invite-summary-name">${displayName}</span>
-          <span class="invite-summary-note">RSVP will be submitted only for this invited guest.</span>
+          <span class="invite-summary-name">${getDisplayName(member)}</span>
+          <span class="invite-summary-note">${statusText}</span>
         </li>
       `;
     })
     .join("");
 }
 
-// ====== PARTY / INVITE LOOKUP ======
-async function loadPartyMembers(partyId) {
-  const { data, error } = await client
-    .from("invite_members")
-    .select("*")
-    .eq("party_id", partyId)
-    .order("first_name", { ascending: true });
-
-  if (error) {
-    console.error("Error loading party members:", error);
-    invitedMembers = [];
-    renderGuestList();
-    renderInviteSummary();
-    return false;
-  }
-
-  invitedMembers = data || [];
-  renderGuestList();
-  renderInviteSummary();
-
-  if (currentLoggedInMember?.id) {
-    const refreshedMember = invitedMembers.find(
-      (member) => String(member.id) === String(currentLoggedInMember.id)
-    );
-
-    if (refreshedMember) {
-      currentLoggedInMember = refreshedMember;
-      populateMailingAddress(refreshedMember);
-    }
-  }
-
-  return true;
-}
-
-async function loadPartyData(partyId) {
-  const { data, error } = await client
-    .from("invite_parties")
-    .select("*")
-    .eq("id", partyId)
-    .single();
-
-  if (error) {
-    console.error("Error loading party:", error);
-    currentPartyData = null;
-    return false;
-  }
-
-  currentPartyData = data;
-  return true;
-}
-
-function createGuestEntry(member) {
-  const wrapper = document.createElement("div");
-  wrapper.className = "guest-entry";
-
-  const memberName = getDisplayName(member);
-
-  wrapper.innerHTML = `
-    <label class="guest-entry-label">
-      <span class="guest-entry-name">${memberName}</span>
-      <select class="guest-attendance" data-member-id="${member.id}" required>
-        <option value="">Select one</option>
-        <option value="yes">Attending</option>
-        <option value="no">Not Attending</option>
-      </select>
-    </label>
-  `;
-
-  return wrapper;
-}
-
-function renderGuestList() {
-  if (!guestList) return;
-
-  guestList.innerHTML = "";
-
-  if (!invitedMembers.length) {
-    guestList.innerHTML = `<p>No invited guests found for this party.</p>`;
-    return;
-  }
-
-  invitedMembers.forEach((member) => {
-    guestList.appendChild(createGuestEntry(member));
-  });
-}
-
+// ====== LOGIN ======
 async function signInInviteLookup() {
-  clearLoginError();
+  if (loginError) loginError.textContent = "";
 
-  const first = normalizeName(loginFirstName?.value);
-  const last = normalizeName(loginLastName?.value);
+  const first = normalize(loginFirstName?.value);
+  const last = normalize(loginLastName?.value);
 
   if (!first || !last) {
-    if (loginError) {
-      loginError.textContent = "Please enter both your first and last name.";
-    }
+    if (loginError) loginError.textContent = "Please enter both your first and last name.";
     return;
   }
 
@@ -328,166 +277,142 @@ async function signInInviteLookup() {
   try {
     const { data, error } = await client
       .from("invite_members")
-      .select("id, party_id, first_name, last_name, display_name, mailing_address")
+      .select("*")
       .ilike("first_name", first)
-      .ilike("last_name", last);
+      .ilike("last_name", last)
+      .limit(1);
 
     if (error) {
       console.error("Invite lookup error:", error);
-      if (loginError) {
-        loginError.textContent = "Something went wrong looking up your invitation.";
-      }
+      if (loginError) loginError.textContent = "Something went wrong looking up your invitation.";
       return;
     }
 
-    if (!data || data.length === 0) {
-      if (loginError) {
-        loginError.textContent = "Name not found. Please try again.";
-      }
+    if (!data || !data.length) {
+      if (loginError) loginError.textContent = "Name not found. Please try again.";
       return;
     }
 
-    const member = data[0];
-    const displayName = getDisplayName(member);
+    currentLoggedInMember = data[0];
+    currentPartyId = currentLoggedInMember.party_id;
 
-    currentParty = member.party_id;
-    currentLoggedInMember = member;
+    localStorage.setItem("invite_member_id", currentLoggedInMember.id);
+    localStorage.setItem("party_id", currentPartyId);
 
-    localStorage.setItem("party_id", member.party_id);
-    localStorage.setItem("party_member_id", member.id);
-    localStorage.setItem("party_member_name", displayName);
+    const partyLoaded = await loadParty(currentPartyId);
+    const membersLoaded = await loadPartyMembers(currentPartyId);
 
-    await loadPartyData(member.party_id);
-    await loadPartyMembers(member.party_id);
+    if (!partyLoaded || !membersLoaded) {
+      if (loginError) loginError.textContent = "Invitation found, but party data could not load.";
+      return;
+    }
 
-    lockNameFields(member.first_name, member.last_name);
-    populateMailingAddress(currentLoggedInMember);
-    updateLoginStateUI(displayName);
+    lockNameFields(currentLoggedInMember);
+    updateLoginStateUI(getDisplayName(currentLoggedInMember));
     closeLoginModal();
     clearStatus();
   } catch (err) {
-    console.error("Unexpected invite lookup error:", err);
-    if (loginError) {
-      loginError.textContent = "Unexpected error occurred. Please try again.";
-    }
+    console.error("Unexpected login error:", err);
+    if (loginError) loginError.textContent = "Unexpected error occurred. Please try again.";
   } finally {
     loginBtn.disabled = false;
   }
 }
 
-async function restoreSavedParty() {
-  const savedParty = localStorage.getItem("party_id");
-  const savedMemberId = localStorage.getItem("party_member_id");
+async function restoreSavedSession() {
+  const savedMemberId = localStorage.getItem("invite_member_id");
+  const savedPartyId = localStorage.getItem("party_id");
 
-  if (!savedParty) {
-    updateLoginStateUI("");
+  if (!savedMemberId || !savedPartyId) {
     openLoginModal();
     return;
   }
 
-  currentParty = savedParty;
+  const { data: member, error } = await client
+    .from("invite_members")
+    .select("*")
+    .eq("id", savedMemberId)
+    .single();
 
-  const loadedParty = await loadPartyData(savedParty);
-  const loadedMembers = await loadPartyMembers(savedParty);
-
-  if (!loadedParty || !loadedMembers || invitedMembers.length === 0) {
+  if (error || !member) {
     clearStoredSession();
-    resetRsvpFormForLogout();
     openLoginModal();
     return;
   }
 
-  if (savedMemberId) {
-    currentLoggedInMember = invitedMembers.find(
-      (member) => String(member.id) === String(savedMemberId)
-    );
+  currentLoggedInMember = member;
+  currentPartyId = member.party_id;
+
+  const partyLoaded = await loadParty(currentPartyId);
+  const membersLoaded = await loadPartyMembers(currentPartyId);
+
+  if (!partyLoaded || !membersLoaded) {
+    clearStoredSession();
+    openLoginModal();
+    return;
   }
 
-  const savedMemberName = localStorage.getItem("party_member_name");
-
-  if (currentLoggedInMember) {
-    lockNameFields(currentLoggedInMember.first_name, currentLoggedInMember.last_name);
-    populateMailingAddress(currentLoggedInMember);
-    updateLoginStateUI(getDisplayName(currentLoggedInMember));
-  } else if (savedMemberName) {
-    const parts = savedMemberName.split(" ");
-    if (parts.length >= 2) {
-      lockNameFields(parts[0], parts.slice(1).join(" "));
-    }
-
-    populateMailingAddress(null);
-    updateLoginStateUI(savedMemberName);
-  } else {
-    updateLoginStateUI("");
-  }
-
+  lockNameFields(currentLoggedInMember);
+  updateLoginStateUI(getDisplayName(currentLoggedInMember));
   closeLoginModal();
 }
 
-// ====== RSVP SUBMISSION ======
+// ====== COLLECT RSVP ======
 function collectGuestResponses() {
-  const guestAttendanceEls = document.querySelectorAll(".guest-attendance");
-  const guestResponses = [];
+  return invitedMembers.map((member) => {
+    const attendanceEl = document.querySelector(
+      `.guest-attendance[data-member-id="${member.id}"]`
+    );
 
-  guestAttendanceEls.forEach((el) => {
-    guestResponses.push({
-      invite_member_id: el.dataset.memberId,
-      attending: el.value
-    });
+    const addressEl = document.querySelector(
+      `.guest-address[data-member-id="${member.id}"]`
+    );
+
+    return {
+      id: member.id,
+      first_name: member.first_name,
+      last_name: member.last_name,
+      mailing_address: normalize(addressEl?.value),
+      attending: normalize(attendanceEl?.value)
+    };
   });
-
-  return guestResponses;
 }
 
-function countAttendingGuests(guestResponses) {
-  return guestResponses.filter((guest) => guest.attending === "yes").length;
+function countAttendingGuests(responses) {
+  return responses.filter((guest) => guest.attending === "yes").length;
 }
 
+// ====== SUBMIT RSVP ======
 if (form) {
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
 
-    if (!currentParty) {
-      setStatus("Please look up your invitation first.", true);
+    if (!currentLoggedInMember || !currentPartyId) {
+      setStatus("Please log in before submitting your RSVP.", true);
       openLoginModal();
       return;
     }
 
-    if (!currentLoggedInMember?.id) {
-      setStatus("Please log out and look up your invitation again.", true);
-      openLoginModal();
+    const responses = collectGuestResponses();
+
+    if (!responses.length) {
+      setStatus("No guests found for this invitation.", true);
       return;
     }
 
-    const firstName = normalizeName(firstNameInput?.value);
-    const lastName = normalizeName(lastNameInput?.value);
-    const messageToCouple = normalizeName(messageInput?.value);
-    const mailingAddress = normalizeName(mailingAddressInput?.value);
-
-    if (!firstName || !lastName) {
-      setStatus("Please make sure your first and last name are filled out.", true);
+    const missingAddress = responses.find((guest) => !guest.mailing_address);
+    if (missingAddress) {
+      setStatus(`Please enter an address for ${missingAddress.first_name}.`, true);
       return;
     }
 
-    if (mailingAddressInput && !mailingAddress) {
-      setStatus("Please confirm or update your mailing address.", true);
+    const missingAttendance = responses.find((guest) => !guest.attending);
+    if (missingAttendance) {
+      setStatus(`Please select attending or not attending for ${missingAttendance.first_name}.`, true);
       return;
     }
 
-    const guestResponses = collectGuestResponses();
-
-    if (!guestResponses.length) {
-      setStatus("No invited guests were found for this party.", true);
-      return;
-    }
-
-    const unansweredGuest = guestResponses.find((guest) => !guest.attending);
-    if (unansweredGuest) {
-      setStatus("Please choose attending or not attending for each invited guest.", true);
-      return;
-    }
-
-    const yesCount = countAttendingGuests(guestResponses);
+    const yesCount = countAttendingGuests(responses);
 
     if (
       currentPartyData &&
@@ -502,25 +427,18 @@ if (form) {
     }
 
     pendingRsvpData = {
-      submittedByFirstName: firstName,
-      submittedByLastName: lastName,
-      messageToCouple,
-      mailingAddress,
-      guestResponses
+      responses,
+      submittedBy: getDisplayName(currentLoggedInMember)
     };
 
-    const fullName = `${firstName} ${lastName}`.trim();
-
     openConfirmModal(
-      `Please confirm this RSVP is only for ${fullName} and the invited guests shown on your invitation. It does not include any uninvited guests or +1's.`
+      `Please confirm this RSVP is only for the invited guests shown on your invitation. No additional +1s are included.`
     );
   });
 }
 
 if (confirmCancel) {
-  confirmCancel.addEventListener("click", () => {
-    closeConfirmModal();
-  });
+  confirmCancel.addEventListener("click", closeConfirmModal);
 }
 
 if (confirmSubmit) {
@@ -534,98 +452,52 @@ if (confirmSubmit) {
     confirmSubmit.disabled = true;
     if (confirmCancel) confirmCancel.disabled = true;
 
-    setStatus("Sending RSVP...");
+    setStatus("Saving RSVP...");
 
     try {
-      const rowsToInsert = pendingRsvpData.guestResponses.map((guest) => {
-        const member = invitedMembers.find(
-          (m) => String(m.id) === String(guest.invite_member_id)
-        );
+      const now = new Date().toISOString();
 
-        return {
-          party_id: currentParty,
-          invite_member_id: guest.invite_member_id,
-          first_name: member?.first_name || "",
-          last_name: member?.last_name || "",
-          attending: guest.attending,
-          message_to_couple: pendingRsvpData.messageToCouple
-        };
-      });
-
-      const { error: rsvpError } = await client.from("rsvps").insert(rowsToInsert);
-
-      if (rsvpError) {
-        console.error("RSVP insert error:", rsvpError);
-        setStatus(`Something went wrong: ${rsvpError.message}`, true);
-        return;
-      }
-
-      if (currentLoggedInMember?.id) {
-        const { error: addressError } = await client
+      for (const guest of pendingRsvpData.responses) {
+        const { error } = await client
           .from("invite_members")
           .update({
-            mailing_address: pendingRsvpData.mailingAddress
+            mailing_address: guest.mailing_address,
+            attending: guest.attending,
+            has_rsvped: true,
+            rsvp_submitted_at: now
           })
-          .eq("id", currentLoggedInMember.id);
+          .eq("id", guest.id)
+          .eq("party_id", currentPartyId);
 
-        if (addressError) {
-          console.error("Address update error:", addressError);
-          setStatus(
-            `Your RSVP was saved, but the address update failed: ${addressError.message}`,
-            true
-          );
+        if (error) {
+          console.error("Guest RSVP update error:", error);
+          setStatus(`Something went wrong saving ${guest.first_name}'s RSVP.`, true);
           return;
         }
-
-        currentLoggedInMember.mailing_address = pendingRsvpData.mailingAddress;
-      }
-
-      const submittingMemberPartyId = currentLoggedInMember?.party_id;
-
-      if (!submittingMemberPartyId) {
-        setStatus("Could not find the party connected to this invitation member.", true);
-        return;
-      }
-
-      if (String(submittingMemberPartyId) !== String(currentParty)) {
-        setStatus("The submitting member does not match the current invite party.", true);
-        return;
       }
 
       const { error: partyError } = await client
         .from("invite_parties")
         .update({
-          has_submitted: true
+          has_submitted: true,
+          submitted_at: now
         })
-        .eq("id", submittingMemberPartyId);
+        .eq("id", currentPartyId);
 
       if (partyError) {
-        console.error("Party submitted update error:", partyError);
-        setStatus(
-          `Your RSVP was saved, but the party submission status failed: ${partyError.message}`,
-          true
-        );
+        console.error("Party submit update error:", partyError);
+        setStatus("RSVP saved, but party submission status failed.", true);
         return;
       }
 
-      if (currentPartyData) {
-        currentPartyData.has_submitted = true;
-      }
+      await loadParty(currentPartyId);
+      await loadPartyMembers(currentPartyId);
 
       setStatus("RSVP submitted successfully!");
-      form.reset();
       pendingRsvpData = null;
       closeConfirmModal();
-
-      if (currentLoggedInMember) {
-        lockNameFields(currentLoggedInMember.first_name, currentLoggedInMember.last_name);
-        populateMailingAddress(currentLoggedInMember);
-      }
-
-      renderGuestList();
-      renderInviteSummary();
     } catch (err) {
-      console.error("Unexpected error:", err);
+      console.error("Unexpected submit error:", err);
       setStatus("Unexpected error occurred.", true);
     } finally {
       confirmSubmit.disabled = false;
@@ -651,11 +523,8 @@ if (siteNav) {
       const currentScrollY = window.scrollY;
       const delta = currentScrollY - lastScrollY;
 
-      if (currentScrollY > 20) {
-        siteNav.classList.add("nav-scrolled");
-      } else {
-        siteNav.classList.remove("nav-scrolled");
-      }
+      if (currentScrollY > 20) siteNav.classList.add("nav-scrolled");
+      else siteNav.classList.remove("nav-scrolled");
 
       if (currentScrollY <= 10) {
         siteNav.classList.remove("nav-hidden");
@@ -668,17 +537,11 @@ if (siteNav) {
       if (delta > 0) {
         scrollDownDistance += delta;
         scrollUpDistance = 0;
-
-        if (scrollDownDistance > HIDE_THRESHOLD) {
-          siteNav.classList.add("nav-hidden");
-        }
+        if (scrollDownDistance > HIDE_THRESHOLD) siteNav.classList.add("nav-hidden");
       } else if (delta < 0) {
         scrollUpDistance += Math.abs(delta);
         scrollDownDistance = 0;
-
-        if (scrollUpDistance > SHOW_THRESHOLD) {
-          siteNav.classList.remove("nav-hidden");
-        }
+        if (scrollUpDistance > SHOW_THRESHOLD) siteNav.classList.remove("nav-hidden");
       }
 
       lastScrollY = currentScrollY;
@@ -687,7 +550,7 @@ if (siteNav) {
   );
 }
 
-// ====== LIVE COUNTDOWN ======
+// ====== COUNTDOWN ======
 const countdownDaysEl = document.getElementById("countdown-days");
 
 function updateWeddingCountdown() {
@@ -695,32 +558,18 @@ function updateWeddingCountdown() {
 
   const weddingDate = new Date(2027, 4, 8);
   const now = new Date();
-  const diffMs = weddingDate.getTime() - now.getTime();
-  const msPerDay = 1000 * 60 * 60 * 24;
-  const daysLeft = Math.ceil(diffMs / msPerDay);
+  const daysLeft = Math.ceil((weddingDate.getTime() - now.getTime()) / 86400000);
 
-  if (daysLeft > 0) {
-    countdownDaysEl.textContent = daysLeft;
-  } else if (daysLeft === 0) {
-    countdownDaysEl.textContent = "0";
-  } else {
-    countdownDaysEl.textContent = "Married!";
-  }
+  countdownDaysEl.textContent = daysLeft > 0 ? daysLeft : daysLeft === 0 ? "0" : "Married!";
 }
 
 updateWeddingCountdown();
 setInterval(updateWeddingCountdown, 60 * 1000);
 
 // ====== INIT ======
-window.addEventListener("load", async () => {
-  await restoreSavedParty();
-});
+window.addEventListener("load", restoreSavedSession);
 
-if (loginBtn) {
-  loginBtn.addEventListener("click", async () => {
-    await signInInviteLookup();
-  });
-}
+if (loginBtn) loginBtn.addEventListener("click", signInInviteLookup);
 
 if (loginFirstName) {
   loginFirstName.addEventListener("keydown", (e) => {
@@ -736,6 +585,8 @@ if (loginLastName) {
 
 if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
-    logoutCurrentGuest();
+    clearStoredSession();
+    resetPageForLogout();
+    openLoginModal();
   });
 }
